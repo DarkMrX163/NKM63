@@ -65,8 +65,8 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel, onN
         </h2>
 
         {/* Readability container with frosted glass backing */}
-        <div className="max-w-2xl mx-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-md transition-all">
-          <p className="text-slate-800 dark:text-slate-100 text-sm sm:text-base font-medium leading-relaxed">
+        <div className="max-w-2xl mx-auto bg-white/55 dark:bg-slate-900/55 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/50 dark:border-slate-700/50 shadow-lg transition-all">
+          <p className="text-slate-800 dark:text-slate-100 text-sm sm:text-base font-semibold leading-relaxed">
             Погрузитесь в богатую историю Нефтегорского района и Самарской области. За каждый верный ответ вы получаете баллы, открываете подлинные музейные экспонаты и архивные справки!
           </p>
         </div>
@@ -83,13 +83,13 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel, onN
                 soundFx.playClick();
                 onSelectLevel(lvl.id);
               }}
-              className={`group relative p-6 sm:p-7 rounded-2xl border-2 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1 bg-white dark:bg-slate-900 ${lvl.color}`}
+              className={`group relative p-6 sm:p-7 rounded-2xl border-2 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-2xl hover:-translate-y-1 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md hover:bg-white/75 dark:hover:bg-slate-900/75 ${lvl.color}`}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-white/80 dark:bg-slate-800/80 shadow-sm border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Icon className="w-6 h-6 text-amber-500" />
                 </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700/70">
                   {lvl.badge}
                 </span>
               </div>
@@ -100,11 +100,11 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel, onN
               <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-3">
                 {lvl.subtitle}
               </p>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+              <p className="text-sm text-slate-700 dark:text-slate-200 mb-6 leading-relaxed font-medium">
                 {lvl.description}
               </p>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800/80">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   Автоподсчет очков и наград
                 </span>

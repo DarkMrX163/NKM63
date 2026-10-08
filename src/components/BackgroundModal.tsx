@@ -1,6 +1,8 @@
 import React from 'react';
-import { X, Image, Upload, RotateCcw, Check, Sparkles, Sliders, Link, Eye } from 'lucide-react';
+import { X, Image, Upload, RotateCcw, Check, Sparkles, Sliders, Link, Eye, Maximize2, StretchHorizontal, Shrink, Layers } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+
+export type BackgroundFit = 'cover' | 'fill' | 'contain';
 
 export interface BackgroundSettings {
   type: 'default' | 'preset' | 'custom';
@@ -8,36 +10,17 @@ export interface BackgroundSettings {
   name: string;
   overlayOpacity: number; // 0 to 90
   blur: number; // 0 to 10
+  fit: BackgroundFit; // 'cover' = full coverage, 'fill' = 100% 100%, 'contain' = inscribe
+  glassEffect: boolean; // translucent glass cards for full background immersion
 }
 
 export const PRESET_BACKGROUNDS = [
   {
-    id: 'default',
-    name: 'По умолчанию (Нейтральный)',
-    url: '',
-    thumbnail: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=200&q=60',
-    description: 'Стандартный минималистичный фон викторины'
-  },
-  {
     id: 'parchment',
-    name: 'Музейный пергамент',
+    name: 'Музейный пергамент (Полное заполнение)',
     url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1920&q=80',
     thumbnail: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=200&q=60',
-    description: 'Старинная фактура бумаги и музейных архивов'
-  },
-  {
-    id: 'barinovka',
-    name: 'Бариновская мельница и поле',
-    url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=200&q=60',
-    description: 'Золотые колосья и ветряная мельница Поволжья'
-  },
-  {
-    id: 'utevka_church',
-    name: 'Утёвка и храм Троицы',
-    url: 'https://images.unsplash.com/photo-1548625361-195fe57876a3?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1548625361-195fe57876a3?auto=format&fit=crop&w=200&q=60',
-    description: 'Троицкий храм, расписанный Григорием Журавлёвым'
+    description: 'Старинная фактура музейной бумаги — идеальна для чтения'
   },
   {
     id: 'samara_river',
@@ -47,11 +30,11 @@ export const PRESET_BACKGROUNDS = [
     description: 'Живописная пойма заволжских степей и речные заводи'
   },
   {
-    id: 'neftegorsk_night',
-    name: 'Вечерний Нефтегорск и огни',
-    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=200&q=60',
-    description: 'Огни города нефтяников под звездным небом'
+    id: 'barinovka',
+    name: 'Бариновская мельница и поле',
+    url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1920&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=200&q=60',
+    description: 'Золотые колосья и ветряная мельница Поволжья'
   },
   {
     id: 'steppes',
@@ -59,15 +42,38 @@ export const PRESET_BACKGROUNDS = [
     url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80',
     thumbnail: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=200&q=60',
     description: 'Бескрайние степные просторы Самарского края'
+  },
+  {
+    id: 'utevka_church',
+    name: 'Утёвка и храм Троицы',
+    url: 'https://images.unsplash.com/photo-1548625361-195fe57876a3?auto=format&fit=crop&w=1920&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1548625361-195fe57876a3?auto=format&fit=crop&w=200&q=60',
+    description: 'Троицкий храм, расписанный Григорием Журавлёвым'
+  },
+  {
+    id: 'neftegorsk_night',
+    name: 'Вечерний Нефтегорск и огни',
+    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=200&q=60',
+    description: 'Огни города нефтяников под звездным небом'
+  },
+  {
+    id: 'neutral',
+    name: 'Нейтральный (без фото)',
+    url: '',
+    thumbnail: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=200&q=60',
+    description: 'Минималистичный вид без фонового изображения'
   }
 ];
 
 export const DEFAULT_BG_SETTINGS: BackgroundSettings = {
-  type: 'default',
-  url: '',
-  name: 'По умолчанию',
-  overlayOpacity: 40,
-  blur: 2
+  type: 'preset',
+  url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1920&q=80',
+  name: 'Музейный пергамент',
+  overlayOpacity: 15,
+  blur: 0,
+  fit: 'cover',
+  glassEffect: true
 };
 
 interface BackgroundModalProps {
@@ -86,8 +92,10 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
   const [selectedType, setSelectedType] = React.useState<BackgroundSettings['type']>(currentSettings.type);
   const [selectedUrl, setSelectedUrl] = React.useState(currentSettings.url);
   const [selectedName, setSelectedName] = React.useState(currentSettings.name);
-  const [overlayOpacity, setOverlayOpacity] = React.useState(currentSettings.overlayOpacity);
-  const [blur, setBlur] = React.useState(currentSettings.blur);
+  const [overlayOpacity, setOverlayOpacity] = React.useState(currentSettings.overlayOpacity ?? 25);
+  const [blur, setBlur] = React.useState(currentSettings.blur ?? 0);
+  const [fit, setFit] = React.useState<BackgroundFit>(currentSettings.fit || 'cover');
+  const [glassEffect, setGlassEffect] = React.useState(currentSettings.glassEffect ?? true);
   const [customUrlInput, setCustomUrlInput] = React.useState('');
   const [fileError, setFileError] = React.useState<string | null>(null);
 
@@ -95,8 +103,10 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
     setSelectedType(currentSettings.type);
     setSelectedUrl(currentSettings.url);
     setSelectedName(currentSettings.name);
-    setOverlayOpacity(currentSettings.overlayOpacity);
-    setBlur(currentSettings.blur);
+    setOverlayOpacity(currentSettings.overlayOpacity ?? 25);
+    setBlur(currentSettings.blur ?? 0);
+    setFit(currentSettings.fit || 'cover');
+    setGlassEffect(currentSettings.glassEffect ?? true);
   }, [currentSettings, isOpen]);
 
   if (!isOpen) return null;
@@ -123,6 +133,7 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
       setSelectedType('custom');
       setSelectedUrl(result);
       setSelectedName(`Своё фото: ${file.name}`);
+      setFit('cover');
       soundFx.playClick();
     };
     reader.readAsDataURL(file);
@@ -134,6 +145,7 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
     setSelectedType('custom');
     setSelectedUrl(customUrlInput.trim());
     setSelectedName('Картинка по ссылке');
+    setFit('cover');
     setCustomUrlInput('');
     soundFx.playClick();
   };
@@ -145,18 +157,22 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
       url: selectedUrl,
       name: selectedName,
       overlayOpacity,
-      blur
+      blur,
+      fit,
+      glassEffect
     });
     onClose();
   };
 
   const handleReset = () => {
     soundFx.playClick();
-    setSelectedType('default');
-    setSelectedUrl('');
-    setSelectedName('По умолчанию');
-    setOverlayOpacity(40);
-    setBlur(2);
+    setSelectedType(DEFAULT_BG_SETTINGS.type);
+    setSelectedUrl(DEFAULT_BG_SETTINGS.url);
+    setSelectedName(DEFAULT_BG_SETTINGS.name);
+    setOverlayOpacity(DEFAULT_BG_SETTINGS.overlayOpacity);
+    setBlur(DEFAULT_BG_SETTINGS.blur);
+    setFit(DEFAULT_BG_SETTINGS.fit);
+    setGlassEffect(DEFAULT_BG_SETTINGS.glassEffect);
   };
 
   return (
@@ -204,7 +220,7 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {PRESET_BACKGROUNDS.map((preset) => {
                 const isSelected =
-                  (preset.id === 'default' && selectedType === 'default') ||
+                  (preset.id === 'neutral' && (selectedType === 'default' || !selectedUrl)) ||
                   (selectedType !== 'default' && selectedUrl === preset.url);
 
                 return (
@@ -212,14 +228,15 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
                     key={preset.id}
                     onClick={() => {
                       soundFx.playClick();
-                      if (preset.id === 'default') {
+                      if (preset.id === 'neutral') {
                         setSelectedType('default');
                         setSelectedUrl('');
-                        setSelectedName('По умолчанию');
+                        setSelectedName('Нейтральный (без фото)');
                       } else {
                         setSelectedType('preset');
                         setSelectedUrl(preset.url);
                         setSelectedName(preset.name);
+                        setFit('cover');
                       }
                     }}
                     className={`relative group rounded-2xl overflow-hidden border-2 text-left p-2 transition-all ${
@@ -307,7 +324,104 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
             </div>
           </div>
 
-          {/* Section 4: Overlay & Blur Adjustments */}
+          {/* Section 4: Screen Fit Mode (Полное заполнение) */}
+          {selectedType !== 'default' && (
+            <div className="p-4 rounded-2xl bg-amber-500/5 dark:bg-amber-400/5 border border-amber-500/20 dark:border-amber-400/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Maximize2 className="w-3.5 h-3.5 text-amber-500" />
+                  Режим заполнения фона
+                </span>
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                  {fit === 'cover' ? 'Полное покрытие экрана' : fit === 'fill' ? 'Растяжение 100% × 100%' : 'Вписать целиком'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => { soundFx.playClick(); setFit('cover'); }}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    fit === 'cover'
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/60 shadow-sm ring-1 ring-amber-500'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Maximize2 className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">Полное (Cover)</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Заполняет весь экран без рамок и пустых полос
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { soundFx.playClick(); setFit('fill'); }}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    fit === 'fill'
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/60 shadow-sm ring-1 ring-amber-500'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <StretchHorizontal className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">Растянуть (100%)</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Точное заполнение 100% ширины и высоты
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { soundFx.playClick(); setFit('contain'); }}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    fit === 'contain'
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/60 shadow-sm ring-1 ring-amber-500'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shrink className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">Вписать (Contain)</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Показать изображение целиком
+                  </p>
+                </button>
+              </div>
+
+              {/* Glassmorphism toggle */}
+              <div className="pt-2.5 border-t border-amber-500/20 dark:border-amber-400/20 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Стеклянные полупрозрачные карточки
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Фон заполняет всё пространство и просвечивает сквозь интерфейс викторины
+                    </div>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={glassEffect}
+                    onChange={(e) => setGlassEffect(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Section 5: Overlay & Blur Adjustments */}
           {selectedType !== 'default' && (
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 space-y-4">
               <div className="flex items-center justify-between">
@@ -316,7 +430,7 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
                   Удобство чтения (затемнение и размытие)
                 </span>
                 <span className="text-[11px] text-slate-400">
-                  Гарантирует четкую читаемость текста вопросов
+                  {overlayOpacity === 0 ? 'Без затемнения (максимальная яркость)' : `Затемнение: ${overlayOpacity}%`}
                 </span>
               </div>
 
@@ -328,12 +442,16 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
                   </div>
                   <input
                     type="range"
-                    min="10"
-                    max="90"
+                    min="0"
+                    max="85"
                     value={overlayOpacity}
                     onChange={(e) => setOverlayOpacity(Number(e.target.value))}
                     className="w-full accent-amber-500"
                   />
+                  <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                    <span>0% (Чистый фон)</span>
+                    <span>85% (Тёмный)</span>
+                  </div>
                 </div>
 
                 <div>
@@ -349,6 +467,10 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
                     onChange={(e) => setBlur(Number(e.target.value))}
                     className="w-full accent-amber-500"
                   />
+                  <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                    <span>0px (Чётко)</span>
+                    <span>8px (Мягко)</span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -115,7 +115,7 @@ export const BlitzGame: React.FC<BlitzGameProps> = ({ onFinishBlitz }) => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex items-center justify-between">
+      <div className="bg-white/65 dark:bg-slate-900/65 backdrop-blur-md rounded-2xl p-4 border border-white/40 dark:border-slate-800 shadow-lg mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-sm">
           <Zap className="w-5 h-5 fill-amber-500" />
           <span>Блиц «Правда или Вымысел»</span>
@@ -123,7 +123,7 @@ export const BlitzGame: React.FC<BlitzGameProps> = ({ onFinishBlitz }) => {
 
         <div className="flex items-center gap-4 text-xs font-bold text-slate-500 dark:text-slate-400">
           <span>Вопрос {currentIndex + 1}/{BLITZ_STATEMENTS.length}</span>
-          <div className="flex items-center gap-1 font-mono text-amber-500 bg-amber-50 dark:bg-amber-950 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+          <div className="flex items-center gap-1 font-mono text-amber-500 bg-amber-50/80 dark:bg-amber-950/80 px-2.5 py-1 rounded-full border border-amber-200/80 dark:border-amber-800">
             <Clock className="w-3.5 h-3.5" />
             <span>{timeLeft} с</span>
           </div>
@@ -131,7 +131,7 @@ export const BlitzGame: React.FC<BlitzGameProps> = ({ onFinishBlitz }) => {
       </div>
 
       {/* Question Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-6 relative overflow-hidden">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-3xl p-8 border border-white/40 dark:border-slate-800 shadow-2xl text-center space-y-6 relative overflow-hidden">
         <span className="inline-block text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
           {currentStatement?.topic}
         </span>

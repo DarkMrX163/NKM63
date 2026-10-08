@@ -95,7 +95,7 @@ export const AiExpertChat: React.FC<AiExpertChatProps> = ({ initialTopic, initia
       </div>
 
       {/* Chat Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col h-[520px]">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-3xl border border-white/40 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col h-[520px]">
         
         {/* Messages List */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">

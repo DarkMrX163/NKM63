@@ -57,7 +57,18 @@ export default function App() {
   const [bgSettings, setBgSettings] = React.useState<BackgroundSettings>(() => {
     try {
       const saved = localStorage.getItem('quiz_bg_settings');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.url || parsed.type === 'default') {
+          return DEFAULT_BG_SETTINGS;
+        }
+        return {
+          ...DEFAULT_BG_SETTINGS,
+          ...parsed,
+          fit: parsed.fit || 'cover',
+          glassEffect: parsed.glassEffect ?? true
+        };
+      }
     } catch (e) {
       console.warn('Failed to parse bg_settings', e);
     }
@@ -264,16 +275,20 @@ export default function App() {
 
   return (
     <div className={`min-h-screen flex flex-col text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300 relative ${
-      bgSettings.type === 'default' ? 'bg-slate-50 dark:bg-slate-950' : 'bg-slate-950'
+      bgSettings.type === 'default' && !bgSettings.url ? 'bg-slate-50 dark:bg-slate-950' : 'bg-transparent'
     }`}>
       
       {/* Custom/Preset Wallpaper Layer */}
       {bgSettings.type !== 'default' && bgSettings.url && (
         <>
           <div
-            className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center transition-all duration-500"
+            className="fixed inset-0 pointer-events-none z-0 transition-all duration-500"
             style={{
               backgroundImage: `url(${bgSettings.url})`,
+              backgroundSize: bgSettings.fit === 'fill' ? '100% 100%' : bgSettings.fit === 'contain' ? 'contain' : 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed',
               filter: bgSettings.blur > 0 ? `blur(${bgSettings.blur}px)` : undefined,
               transform: bgSettings.blur > 0 ? 'scale(1.05)' : undefined
             }}
@@ -282,7 +297,7 @@ export default function App() {
             className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300"
             style={{
               backgroundColor: isDarkMode ? '#020617' : '#0f172a',
-              opacity: (bgSettings.overlayOpacity ?? 40) / 100
+              opacity: (bgSettings.overlayOpacity ?? 25) / 100
             }}
           />
         </>
@@ -315,7 +330,7 @@ export default function App() {
             ) : isQuizCompleted ? (
               /* Quiz Summary Screen */
               <div className="py-12 px-4 max-w-xl mx-auto text-center animate-scale-up">
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
+                <div className="bg-white/75 dark:bg-slate-900/75 backdrop-blur-md rounded-3xl p-8 border border-white/40 dark:border-slate-800 shadow-2xl space-y-6">
                   
                   <div className="w-20 h-20 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
                     <Trophy className="w-10 h-10 animate-bounce" />
@@ -384,12 +399,12 @@ export default function App() {
                         soundFx.playClick();
                         setSelectedLevel(null);
                       }}
-                      className="text-xs font-bold text-slate-500 hover:text-amber-500 flex items-center gap-1"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-200 bg-white/30 dark:bg-slate-800/40 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/30 dark:border-slate-700/40 hover:bg-white/50 dark:hover:bg-slate-800/60 transition-colors flex items-center gap-1.5"
                     >
                       ← Сменить уровень
                     </button>
 
-                    <div className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-900">
+                    <div className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-400/10 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-amber-500/30">
                       Счет: {score} б.
                     </div>
                   </div>

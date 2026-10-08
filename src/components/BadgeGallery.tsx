@@ -32,10 +32,10 @@ export const BadgeGallery: React.FC<BadgeGalleryProps> = ({ unlockedBadgeIds }) 
           return (
             <div
               key={badge.id}
-              className={`p-6 rounded-3xl border-2 transition-all relative overflow-hidden bg-white dark:bg-slate-900 ${
+              className={`p-6 rounded-3xl border-2 transition-all relative overflow-hidden bg-white/65 dark:bg-slate-900/65 backdrop-blur-md ${
                 isUnlocked
                   ? 'border-amber-400/50 shadow-xl shadow-amber-500/5'
-                  : 'border-slate-200 dark:border-slate-800 opacity-60 grayscale'
+                  : 'border-slate-200/60 dark:border-slate-800/60 opacity-60 grayscale'
               }`}
             >
               <div className="flex items-start justify-between mb-4">

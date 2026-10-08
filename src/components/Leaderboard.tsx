@@ -65,7 +65,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
       </div>
 
       {/* Controls Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white/65 dark:bg-slate-900/65 backdrop-blur-md rounded-2xl p-4 border border-white/40 dark:border-slate-800 shadow-lg mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Search */}
         <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -109,7 +109,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
       </div>
 
       {/* Leaderboard Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-3xl border border-white/40 dark:border-slate-800 shadow-2xl overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400 space-y-3">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto text-amber-500" />

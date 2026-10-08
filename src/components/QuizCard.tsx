@@ -92,14 +92,14 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       {/* Top Status Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex items-center justify-between gap-4">
+      <div className="bg-white/65 dark:bg-slate-900/65 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/50 dark:border-slate-800 shadow-lg mb-6 flex items-center justify-between gap-4">
         
         {/* Progress */}
         <div className="flex items-center gap-3">
-          <div className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+          <div className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
             Вопрос <span className="text-amber-500 text-base font-extrabold">{questionIndex + 1}</span> / {totalQuestions}
           </div>
-          <div className="hidden sm:block w-32 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="hidden sm:block w-32 h-2 bg-slate-100/70 dark:bg-slate-800/70 rounded-full overflow-hidden">
             <div
               className="h-full bg-amber-500 transition-all duration-300"
               style={{ width: `${((questionIndex + 1) / totalQuestions) * 100}%` }}
@@ -110,13 +110,13 @@ export const QuizCard: React.FC<QuizCardProps> = ({
         {/* Streak & Timer */}
         <div className="flex items-center gap-3">
           {streak > 1 && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 font-extrabold text-xs animate-bounce border border-orange-300 dark:border-orange-800">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100/80 dark:bg-orange-950/80 text-orange-600 dark:text-orange-400 font-extrabold text-xs animate-bounce border border-orange-300/80 dark:border-orange-800">
               <Flame className="w-4 h-4 fill-orange-500" />
               Стрик x{streak}!
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 rounded-full">
             <Clock className={`w-4 h-4 ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-amber-500'}`} />
             <span className={timeLeft <= 5 ? 'text-red-500 font-black' : ''}>{timeLeft} с</span>
           </div>
@@ -124,7 +124,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       </div>
 
       {/* Main Question Box */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-xl transition-all relative overflow-hidden">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/50 dark:border-slate-800 shadow-2xl transition-all relative overflow-hidden">
         
         {/* Category Header */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -233,15 +233,15 @@ export const QuizCard: React.FC<QuizCardProps> = ({
               );
             }
 
-            let btnStyle = 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-slate-800 hover:border-amber-400 text-slate-800 dark:text-slate-100';
+            let btnStyle = 'border-slate-200/80 dark:border-slate-700/70 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 hover:border-amber-400 text-slate-800 dark:text-slate-100 shadow-sm';
 
             if (showFeedback) {
               if (isCorrect) {
-                btnStyle = 'border-green-500 bg-green-50 dark:bg-green-950/80 text-green-900 dark:text-green-100 font-bold shadow-md shadow-green-500/10';
+                btnStyle = 'border-green-500 bg-green-50/90 dark:bg-green-950/90 text-green-900 dark:text-green-100 font-bold shadow-md shadow-green-500/10 backdrop-blur-sm';
               } else if (isSelected) {
-                btnStyle = 'border-red-500 bg-red-50 dark:bg-red-950/80 text-red-900 dark:text-red-100 font-bold';
+                btnStyle = 'border-red-500 bg-red-50/90 dark:bg-red-950/90 text-red-900 dark:text-red-100 font-bold backdrop-blur-sm';
               } else {
-                btnStyle = 'border-slate-200 dark:border-slate-800 opacity-50 bg-slate-50 dark:bg-slate-900';
+                btnStyle = 'border-slate-200/60 dark:border-slate-800/60 opacity-50 bg-slate-50/40 dark:bg-slate-900/40';
               }
             }
 
