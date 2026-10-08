@@ -12,8 +12,13 @@ app.use(express.json());
 
 app.post('/api/ai-expert', async (req, res) => {
   try {
-    const { prompt, topic } = req.body || {};
+    const { prompt, topic, wikiContext } = req.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
+
+    let wikiText = '';
+    if (wikiContext && wikiContext.extract) {
+      wikiText = `\nСправка из Википедии («${wikiContext.title}»): ${wikiContext.extract}`;
+    }
 
     if (!apiKey) {
       const p = (prompt || '').toLowerCase();
@@ -27,16 +32,26 @@ app.post('/api/ai-expert', async (req, res) => {
       } else if (p.includes('река') || p.includes('животное') || p.includes('природ') || p.includes('сурок')) {
         answer = 'По границам района протекает река Самара, а в заволжских степях живут сурки-байбаки и гнездятся редкие орлы-могильники!';
       }
+
+      if (wikiText) {
+        answer = `🌐 Википедия («${wikiContext.title}»): ${wikiContext.extract.slice(0, 300)}...\n\n🏛️ ${answer}`;
+      }
+
       return res.json({ answer });
     }
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Тема: ${topic || 'История Нефтегорского района и Самарской области'}\nВопрос: ${prompt}`,
+      contents: `Тема: ${topic || 'История Нефтегорского района и Самарской области'}\nВопрос: ${prompt}${wikiText}`,
       config: {
-        systemInstruction: `Ты — виртуальный экскурсовод и главный краевед Нефтегорского межпоселенческого краеведческого музея (nkm63.ru).
-Твоя цель — лаконично (2-4 предложения), с теплотой и гордостью рассказать интересный исторический или краеведческий факт по теме вопроса пользователя. Отвечай всегда на русском языке.`
+        systemInstruction: `Ты — виртуальный экскурсовод и главный краевед Нефтегорского краеведческого музея (Самарская область, nkm63.ru).
+
+КРИТИЧЕСКОЕ ПРАВИЛО ПО ГЕОГРАФИИ:
+- Вопросы касаются ИСКЛЮЧИТЕЛЬНО города Нефтегорск и Нефтегорского района САМАРСКОЙ ОБЛАСТИ!
+- Нефть здесь была открыта в 1959–1960 годах на Кулешовском месторождении, в 1960 г. основан посёлок Нефтегорск.
+- НИ В КОЕМ СЛУЧАЕ не путай с Сахалинской областью, Охой или землетрясением 1995 года!
+- Отвечай лаконично (2-4 предложения) на русском языке.`
       }
     });
 

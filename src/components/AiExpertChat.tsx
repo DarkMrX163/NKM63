@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Send, Sparkles, BookOpen, User, RefreshCw } from 'lucide-react';
+import { Bot, Send, Sparkles, BookOpen, User, RefreshCw, Globe } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { getAiHistorianResponse } from '../utils/aiHistorian';
 
@@ -57,9 +57,15 @@ export const AiExpertChat: React.FC<AiExpertChatProps> = ({ initialTopic, initia
     <div className="py-8 px-4 max-w-3xl mx-auto">
       {/* Title */}
       <div className="text-center mb-6 space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase border border-indigo-300 dark:border-indigo-800">
-          <Bot className="w-3.5 h-3.5 text-indigo-500" />
-          Музейный ИИ-Эксперт nkm63.ru
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase border border-indigo-300 dark:border-indigo-800">
+            <Bot className="w-3.5 h-3.5 text-indigo-500" />
+            Музейный ИИ-Эксперт nkm63.ru
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-300 dark:border-blue-800">
+            <Globe className="w-3.5 h-3.5 text-blue-500" />
+            Википедия
+          </div>
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 dark:text-white">
           Спросите Эксперта Музея
