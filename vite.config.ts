@@ -58,6 +58,7 @@ function aiExpertApiPlugin(): Plugin {
 
 export default defineConfig(() => {
   return {
+    base: './',
     plugins: [react(), tailwindcss(), aiExpertApiPlugin()],
     resolve: {
       alias: {
