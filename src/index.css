@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+  .font-serif-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .font-garamond {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Museum Ribbon Banner Effect */
+.museum-ribbon {
+  position: relative;
+  background: linear-gradient(180deg, #EAD3A6 0%, #D4AF37 40%, #B8860B 100%);
+  color: #3B0E17;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 2px solid #8A6113;
+}
+
+.dark .museum-ribbon {
+  background: linear-gradient(180deg, #D4AF37 0%, #B8860B 50%, #8A6113 100%);
+  color: #FAF6EE;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  border: 2px solid #F4EFE6;
+}
+
+/* Parchment texture gradient for museum feel */
+.bg-parchment {
+  background-color: #F8F3E6;
+  background-image: radial-gradient(#E2D9C5 1px, transparent 1px), radial-gradient(#E2D9C5 1px, #F8F3E6 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+.dark .bg-parchment {
+  background-color: #0F172A;
+  background-image: radial-gradient(#1E293B 1px, transparent 1px), radial-gradient(#1E293B 1px, #0F172A 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+/* Ornamental Certificate Double Frame */
+.certificate-frame {
+  border: 10px double #C59B27;
+  outline: 3px solid #8A6113;
+  outline-offset: -5px;
+  box-shadow: inset 0 0 30px rgba(184, 134, 11, 0.15);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Print Styles for Certificate Download / Printing */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-certificate, #printable-certificate * {
+    visibility: visible;
+  }
+  #printable-certificate {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 30px;
+    background: #F8F3E6 !important;
+    color: #2D1500 !important;
+    box-shadow: none !important;
+    border: 12px double #C59B27 !important;
+  }
+}
+
+
+

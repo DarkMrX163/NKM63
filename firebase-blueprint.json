@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "LeaderboardEntry": {
+      "title": "Leaderboard Entry",
+      "description": "High score entry for the Samara & Neftegorsk Local History Quiz",
+      "type": "object",
+      "properties": {
+        "playerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Name or nickname of the player"
+        },
+        "avatar": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Selected avatar identifier"
+        },
+        "score": {
+          "type": "integer",
+          "description": "Total points accumulated"
+        },
+        "level": {
+          "type": "string",
+          "enum": ["easy", "medium", "hard", "mixed"],
+          "description": "Difficulty level played"
+        },
+        "accuracy": {
+          "type": "integer",
+          "description": "Percentage of correct answers (0-100)"
+        },
+        "correctAnswers": {
+          "type": "integer",
+          "description": "Count of correct answers"
+        },
+        "totalQuestions": {
+          "type": "integer",
+          "description": "Total questions answered"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when result was saved"
+        }
+      },
+      "required": ["playerName", "score", "level", "accuracy", "correctAnswers", "totalQuestions", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/leaderboard/{entryId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Global leaderboard entries for cross-platform scores"
+    }
+  }
+}
