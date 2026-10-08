@@ -64,14 +64,27 @@ export function generateLocalKnowledgeAnswer(
 }
 
 /**
- * Robust hybrid function to query AI Historian with Wikipedia grounding.
+ * Robust hybrid function to query AI Historian with Wikipedia grounding and conversation history.
  * Works on server, on client with API key, or completely offline / static GitHub Pages host.
  */
-export async function getAiHistorianResponse(prompt: string, topic?: string): Promise<string> {
+export async function getAiHistorianResponse(
+  prompt: string,
+  topic?: string,
+  history?: Array<{ role: 'user' | 'assistant'; text: string }>
+): Promise<string> {
+  // If the prompt is a follow-up (e.g. "расскажи подробнее"), extract key terms from history
+  let searchSubject = prompt;
+  if (prompt.trim().split(/\s+/).length <= 4 && Array.isArray(history) && history.length > 0) {
+    const lastUserMsg = [...history].reverse().find(m => m.role === 'user');
+    if (lastUserMsg) {
+      searchSubject = `${lastUserMsg.text} ${prompt}`;
+    }
+  }
+
   // Try fetching Wikipedia info first
   let wikiInfo: WikipediaSearchResult | null = null;
   try {
-    wikiInfo = await fetchWikipediaInfo(prompt);
+    wikiInfo = await fetchWikipediaInfo(searchSubject);
   } catch (err) {
     console.warn('Wikipedia pre-fetch error:', err);
   }
@@ -79,7 +92,7 @@ export async function getAiHistorianResponse(prompt: string, topic?: string): Pr
   // 1. Try server API route if available
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500); // 4.5 sec timeout
+    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 sec timeout for internet search
 
     const res = await fetch('/api/ai-expert', {
       method: 'POST',
@@ -87,6 +100,7 @@ export async function getAiHistorianResponse(prompt: string, topic?: string): Pr
       body: JSON.stringify({
         prompt,
         topic: topic || 'Краеведение Самарского края',
+        history,
         wikiContext: wikiInfo ? { title: wikiInfo.title, extract: wikiInfo.extract, url: wikiInfo.url } : null
       }),
       signal: controller.signal
@@ -112,21 +126,39 @@ export async function getAiHistorianResponse(prompt: string, topic?: string): Pr
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
       const wikiContextText = wikiInfo?.extract
-        ? `\nДанные из Википедии (${wikiInfo.title}): ${wikiInfo.extract}`
+        ? `\n[Данные из Википедии (${wikiInfo.title})]: ${wikiInfo.extract}`
         : '';
+
+      let formattedContents: any = [];
+      if (Array.isArray(history) && history.length > 0) {
+        const pastTurns = history.slice(-6).map((msg) => ({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.text }]
+        }));
+        pastTurns.push({
+          role: 'user',
+          parts: [{ text: `Текущий вопрос пользователя: ${prompt}${wikiContextText}` }]
+        });
+        formattedContents = pastTurns;
+      } else {
+        formattedContents = `Тема: ${topic || 'История Нефтегорского района и Самарского края'}\nВопрос пользователя: ${prompt}${wikiContextText}`;
+      }
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Тема: ${topic || 'История Нефтегорского района и Самарского края'}\nВопрос пользователя: ${prompt}${wikiContextText}`,
+        contents: formattedContents,
         config: {
+          tools: [{ googleSearch: {} }],
           systemInstruction: `Ты — виртуальный экскурсовод и музейный ИИ-Краевед Нефтегорского краеведческого музея (Самарская область, nkm63.ru).
 
-КРИТИЧЕСКИ ВАЖНОЕ ПРАВИЛО ПО КЕОГРАФИИ:
+КРИТИЧЕСКИ ВАЖНОЕ ПРАВИЛО ПО ГЕОГРАФИИ:
 - Речь идет ИСКЛЮЧИТЕЛЬНО о городе Нефтегорск и Нефтегорском районе САМАРСКОЙ ОБЛАСТИ (Поволжье)!
 - Нефть возле Нефтегорска (Самарская область) была открыта в 1959–1960 годах (знаменитое Кулешовское месторождение), и в 1960 году был основан рабочий посёлок Нефтегорск (с 1989 г. — город).
-- КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО упоминать посёлок Нефтегорск Сахалинской области, город Оху или землетрясение 1995 года! Это совершенно другой регион.
+- КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО упоминать посёлок Нефтегорск Сахалинской области, город Оху или землетрясение 1995 года!
 
-Отвечай грамотно, увлекательно и познавательно (3-5 предложений) на русском языке. Ссылайся на музейные краеведческие факты и при наличии — на Википедию.`
+ПРАВИЛА ОТВЕТА:
+- Ты свободно отвечаешь на любые уточняющие или дополнительные вопросы, учитывая историю текущего диалога.
+- Используй встроенный интернет-поиск и данные Википедии для максимально полного ответа.`
         }
       });
 
@@ -139,6 +171,6 @@ export async function getAiHistorianResponse(prompt: string, topic?: string): Pr
   }
 
   // 3. Fallback to rich local Knowledge Base Engine + Wikipedia (100% reliable on GitHub Pages)
-  return generateLocalKnowledgeAnswer(prompt, topic, wikiInfo);
+  return generateLocalKnowledgeAnswer(searchSubject, topic, wikiInfo);
 }
 

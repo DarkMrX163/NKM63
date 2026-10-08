@@ -12,12 +12,12 @@ app.use(express.json());
 
 app.post('/api/ai-expert', async (req, res) => {
   try {
-    const { prompt, topic, wikiContext } = req.body || {};
+    const { prompt, topic, history, wikiContext } = req.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
 
     let wikiText = '';
     if (wikiContext && wikiContext.extract) {
-      wikiText = `\nСправка из Википедии («${wikiContext.title}»): ${wikiContext.extract}`;
+      wikiText = `\n[Справка из Википедии «${wikiContext.title}»]: ${wikiContext.extract}`;
     }
 
     if (!apiKey) {
@@ -34,24 +34,47 @@ app.post('/api/ai-expert', async (req, res) => {
       }
 
       if (wikiText) {
-        answer = `🌐 Википедия («${wikiContext.title}»): ${wikiContext.extract.slice(0, 300)}...\n\n🏛️ ${answer}`;
+        answer = `🌐 [Данные из Википедии]: ${wikiContext.extract.slice(0, 300)}...\n\n🏛️ ${answer}`;
       }
 
       return res.json({ answer });
     }
 
     const ai = new GoogleGenAI({ apiKey });
+
+    // Format conversation history for Gemini multi-turn or context prompt
+    let formattedContents: any = [];
+    if (Array.isArray(history) && history.length > 0) {
+      // Include past history turns
+      const pastTurns = history.slice(-6).map((msg: any) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.text }]
+      }));
+      pastTurns.push({
+        role: 'user',
+        parts: [{ text: `Текущий вопрос пользователя: ${prompt}${wikiText}` }]
+      });
+      formattedContents = pastTurns;
+    } else {
+      formattedContents = `Тема: ${topic || 'История Нефтегорского района и Самарской области'}\nВопрос: ${prompt}${wikiText}`;
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Тема: ${topic || 'История Нефтегорского района и Самарской области'}\nВопрос: ${prompt}${wikiText}`,
+      contents: formattedContents,
       config: {
+        tools: [{ googleSearch: {} }],
         systemInstruction: `Ты — виртуальный экскурсовод и главный краевед Нефтегорского краеведческого музея (Самарская область, nkm63.ru).
 
 КРИТИЧЕСКОЕ ПРАВИЛО ПО ГЕОГРАФИИ:
-- Вопросы касаются ИСКЛЮЧИТЕЛЬНО города Нефтегорск и Нефтегорского района САМАРСКОЙ ОБЛАСТИ!
+- Все вопросы касаются ИСКЛЮЧИТЕЛЬНО города Нефтегорск и Нефтегорского района САМАРСКОЙ ОБЛАСТИ (Поволжье)!
 - Нефть здесь была открыта в 1959–1960 годах на Кулешовском месторождении, в 1960 г. основан посёлок Нефтегорск.
 - НИ В КОЕМ СЛУЧАЕ не путай с Сахалинской областью, Охой или землетрясением 1995 года!
-- Отвечай лаконично (2-4 предложения) на русском языке.`
+
+ПРАВИЛА ОТВЕТА:
+- Ты умеешь отвечать как на основные, так и на любые УТОЧНЯЮЩИЕ / ДОПОЛНИТЕЛЬНЫЕ вопросы пользователя (используй контекст беседы).
+- Активно используй встроенный ПОИСК В ИНТЕРНЕТЕ и данные Википедии для предоставления самых точных, свежих и подробных сведений.
+- Отвечай дружелюбно, познавательно и грамотно на русском языке.`
       }
     });
 
