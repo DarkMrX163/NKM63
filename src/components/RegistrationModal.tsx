@@ -146,6 +146,20 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
             </button>
           </div>
 
+          {/* Quick guest play */}
+          <div className="pt-1 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playClick();
+                onSave('Краевед-Гость', 'Нефтегорский район');
+              }}
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 underline underline-offset-4 font-semibold transition-colors cursor-pointer"
+            >
+              Быстрый старт без ввода данных (играть как Гость)
+            </button>
+          </div>
+
         </form>
 
       </div>

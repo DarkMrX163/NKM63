@@ -10,6 +10,7 @@ import { BadgeGallery } from './components/BadgeGallery';
 import { AiExpertChat } from './components/AiExpertChat';
 import { SocialShareModal } from './components/SocialShareModal';
 import { RegistrationModal } from './components/RegistrationModal';
+import { BackgroundModal, BackgroundSettings, DEFAULT_BG_SETTINGS } from './components/BackgroundModal';
 import { Footer } from './components/Footer';
 
 import { Difficulty, Question } from './types/quiz';
@@ -52,6 +53,16 @@ export default function App() {
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const [unlockedBadgeIds, setUnlockedBadgeIds] = React.useState<string[]>(['badge_first_step']);
   const [showShareModal, setShowShareModal] = React.useState(false);
+  const [showBackgroundModal, setShowBackgroundModal] = React.useState(false);
+  const [bgSettings, setBgSettings] = React.useState<BackgroundSettings>(() => {
+    try {
+      const saved = localStorage.getItem('quiz_bg_settings');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Failed to parse bg_settings', e);
+    }
+    return DEFAULT_BG_SETTINGS;
+  });
   const [lastRecord, setLastRecord] = React.useState<LeaderboardRecord | null>(null);
   const [aiChatTopic, setAiChatTopic] = React.useState<string | undefined>(undefined);
   const [aiChatQuestion, setAiChatQuestion] = React.useState<string | undefined>(undefined);
@@ -79,6 +90,18 @@ export default function App() {
   React.useEffect(() => {
     localStorage.setItem('player_location', playerLocation);
   }, [playerLocation]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('quiz_bg_settings', JSON.stringify(bgSettings));
+    } catch (e) {
+      console.warn('Failed to save quiz_bg_settings to localStorage', e);
+    }
+  }, [bgSettings]);
+
+  const handleSaveBackground = (newSettings: BackgroundSettings) => {
+    setBgSettings(newSettings);
+  };
 
   // Handle level select
   const handleSelectLevel = (level: Difficulty | 'mixed') => {
@@ -240,26 +263,55 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+    <div className={`min-h-screen flex flex-col text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300 relative ${
+      bgSettings.type === 'default' ? 'bg-slate-50 dark:bg-slate-950' : 'bg-slate-950'
+    }`}>
       
-      {/* Navigation Header */}
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
-        playerName={playerName}
-        setPlayerName={setPlayerName}
-        totalScore={score}
-      />
+      {/* Custom/Preset Wallpaper Layer */}
+      {bgSettings.type !== 'default' && bgSettings.url && (
+        <>
+          <div
+            className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center transition-all duration-500"
+            style={{
+              backgroundImage: `url(${bgSettings.url})`,
+              filter: bgSettings.blur > 0 ? `blur(${bgSettings.blur}px)` : undefined,
+              transform: bgSettings.blur > 0 ? 'scale(1.05)' : undefined
+            }}
+          />
+          <div
+            className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300"
+            style={{
+              backgroundColor: isDarkMode ? '#020617' : '#0f172a',
+              opacity: (bgSettings.overlayOpacity ?? 40) / 100
+            }}
+          />
+        </>
+      )}
 
-      {/* Main Content Area */}
-      <main className="flex-1">
+      {/* Main App Container */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Navigation Header */}
+        <Header
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          playerName={playerName}
+          setPlayerName={setPlayerName}
+          totalScore={score}
+          onOpenBackgroundModal={() => setShowBackgroundModal(true)}
+        />
+
+        {/* Main Content Area */}
+        <main className="flex-1">
         {/* TAB 1: QUIZ */}
         {activeTab === 'quiz' && (
           <div>
             {!selectedLevel ? (
-              <LevelSelector onSelectLevel={handleSelectLevel} />
+              <LevelSelector
+                onSelectLevel={handleSelectLevel}
+                onNavigateTab={(tab) => setActiveTab(tab)}
+              />
             ) : isQuizCompleted ? (
               /* Quiz Summary Screen */
               <div className="py-12 px-4 max-w-xl mx-auto text-center animate-scale-up">
@@ -431,8 +483,17 @@ export default function App() {
         />
       )}
 
+      {/* Background Customizer Modal */}
+      <BackgroundModal
+        isOpen={showBackgroundModal}
+        onClose={() => setShowBackgroundModal(false)}
+        currentSettings={bgSettings}
+        onSave={handleSaveBackground}
+      />
+
       {/* Footer */}
       <Footer />
+      </div>
     </div>
   );
 }

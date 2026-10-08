@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Trophy, Map, Zap, Award, Bot, Moon, Sun, Volume2, VolumeX, BookOpen } from 'lucide-react';
+import { Compass, Trophy, Map, Zap, Award, Bot, Moon, Sun, Volume2, VolumeX, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface HeaderProps {
@@ -10,6 +10,7 @@ interface HeaderProps {
   playerName: string;
   setPlayerName: (val: string) => void;
   totalScore: number;
+  onOpenBackgroundModal: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   setIsDarkMode,
   playerName,
   setPlayerName,
-  totalScore
+  totalScore,
+  onOpenBackgroundModal
 }) => {
   const [isMuted, setIsMuted] = React.useState(soundFx.isMuted);
 
@@ -69,7 +71,17 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            {/* Background Customizer Button */}
+            <button
+              onClick={() => { soundFx.playClick(); onOpenBackgroundModal(); }}
+              title="Сменить фон викторины (выбрать или загрузить свой)"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-slate-700 dark:text-slate-200 bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-400/10 dark:hover:bg-amber-400/20 border border-amber-500/30 flex items-center gap-1.5 transition-all text-xs font-semibold"
+            >
+              <ImageIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span className="hidden sm:inline">Фон</span>
+            </button>
+
             {/* Mute Sound Button */}
             <button
               onClick={toggleSound}

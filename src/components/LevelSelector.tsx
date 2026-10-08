@@ -5,9 +5,10 @@ import { soundFx } from '../utils/audio';
 
 interface LevelSelectorProps {
   onSelectLevel: (level: Difficulty | 'mixed') => void;
+  onNavigateTab?: (tab: 'quiz' | 'blitz' | 'leaderboard' | 'badges' | 'ai') => void;
 }
 
-export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel }) => {
+export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel, onNavigateTab }) => {
   const levels = [
     {
       id: 'easy' as const,
@@ -54,7 +55,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel }) =
   return (
     <div className="py-8 px-4 max-w-5xl mx-auto">
       {/* Banner */}
-      <div className="text-center mb-10 space-y-3">
+      <div className="text-center mb-10 space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-black uppercase tracking-widest border border-amber-400/40 shadow-sm font-serif">
           <BookOpen className="w-3.5 h-3.5" />
           Музейно-Краеведческая Экспозиция • nkm63.ru
@@ -62,9 +63,13 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({ onSelectLevel }) =
         <h2 className="text-2xl sm:text-4xl font-extrabold font-serif text-slate-900 dark:text-amber-100">
           Выберите Экспозиционный Зал
         </h2>
-        <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-2xl mx-auto">
-          Исследуйте богатейшую историю Нефтегорского района и Самарской области. За каждый верный ответ вы получаете баллы, музейные экспонаты и архивные справки!
-        </p>
+
+        {/* Readability container with frosted glass backing */}
+        <div className="max-w-2xl mx-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-md transition-all">
+          <p className="text-slate-800 dark:text-slate-100 text-sm sm:text-base font-medium leading-relaxed">
+            Погрузитесь в богатую историю Нефтегорского района и Самарской области. За каждый верный ответ вы получаете баллы, открываете подлинные музейные экспонаты и архивные справки!
+          </p>
+        </div>
       </div>
 
       {/* Level Cards Grid */}
