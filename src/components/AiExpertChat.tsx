@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bot, Send, Sparkles, BookOpen, User, RefreshCw } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { getAiHistorianResponse } from '../utils/aiHistorian';
 
 interface AiExpertChatProps {
   initialTopic?: string;
@@ -35,19 +36,11 @@ export const AiExpertChat: React.FC<AiExpertChatProps> = ({ initialTopic, initia
     setLoading(true);
 
     try {
-      const res = await fetch('/api/ai-expert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: textToSend, topic: 'Краеведение Самарского края и Нефтегорска' })
-      });
-
-      const data = await res.json();
-      const answer = data.answer || 'Извините, сейчас экскурсовод обрабатывает архивы. Попробуйте ещё раз!';
-
+      const answer = await getAiHistorianResponse(textToSend, initialTopic);
       setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);
     } catch (e) {
       console.error(e);
-      setMessages((prev) => [...prev, { role: 'assistant', text: 'Ошибка соединения с архивом ИИ. Проверьте сеть!' }]);
+      setMessages((prev) => [...prev, { role: 'assistant', text: 'Краевед обращается к архивным записям музея. Попробуйте еще раз!' }]);
     } finally {
       setLoading(false);
     }
