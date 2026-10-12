@@ -1,26 +1,31 @@
 import React from 'react';
 import confetti from 'canvas-confetti';
-import { Header } from './components/Header';
+import { Header, AppTab } from './components/Header';
 import { LevelSelector } from './components/LevelSelector';
 import { QuizCard } from './components/QuizCard';
 import { ExplanationModal } from './components/ExplanationModal';
 import { BlitzGame } from './components/BlitzGame';
+import { ExhibitMiniGame } from './components/ExhibitMiniGame';
+import { CertificateView } from './components/CertificateView';
+import { MuseumTicketView } from './components/MuseumTicketView';
 import { Leaderboard } from './components/Leaderboard';
 import { BadgeGallery } from './components/BadgeGallery';
 import { AiExpertChat } from './components/AiExpertChat';
 import { SocialShareModal } from './components/SocialShareModal';
 import { RegistrationModal } from './components/RegistrationModal';
 import { BackgroundModal, BackgroundSettings, DEFAULT_BG_SETTINGS } from './components/BackgroundModal';
+import { AchievementToast } from './components/AchievementToast';
 import { Footer } from './components/Footer';
 
-import { Difficulty, Question } from './types/quiz';
-import { EASY_QUESTIONS, MEDIUM_QUESTIONS, HARD_QUESTIONS } from './data/questions';
+import { Difficulty, Question, GameMode, Badge, HallSelection } from './types/quiz';
+import { EASY_QUESTIONS, MEDIUM_QUESTIONS, HARD_QUESTIONS, ALL_BADGES } from './data/questions';
+import { CompletedHallRecord, MUSEUM_HALLS } from './data/halls';
 import { submitScore, LeaderboardRecord } from './firebase';
 import { soundFx } from './utils/audio';
-import { Trophy, RotateCcw, Share2 } from 'lucide-react';
+import { Trophy, RotateCcw, Share2, Scroll, Ticket, Sparkles, Heart, Compass, CheckCircle2, Lock } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = React.useState<'quiz' | 'blitz' | 'leaderboard' | 'badges' | 'ai'>('quiz');
+  const [activeTab, setActiveTab] = React.useState<AppTab>('quiz');
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
     return localStorage.getItem('theme') === 'dark' ||
       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -32,11 +37,32 @@ export default function App() {
     return localStorage.getItem('player_location') || '';
   });
 
+  const [unlockedExhibitsCount, setUnlockedExhibitsCount] = React.useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('unlocked_exhibits');
+      return saved ? JSON.parse(saved).length : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // Track completed thematic museum halls (minimum 2 halls needed for museum ticket)
+  const [completedHalls, setCompletedHalls] = React.useState<CompletedHallRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('completed_museum_halls');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [showRegistrationModal, setShowRegistrationModal] = React.useState(false);
-  const [pendingLevel, setPendingLevel] = React.useState<Difficulty | 'mixed' | null>(null);
+  const [pendingLevel, setPendingLevel] = React.useState<HallSelection | null>(null);
+  const [pendingMode, setPendingMode] = React.useState<GameMode>('classic');
 
   // Quiz game state
-  const [selectedLevel, setSelectedLevel] = React.useState<Difficulty | 'mixed' | null>(null);
+  const [selectedLevel, setSelectedLevel] = React.useState<HallSelection | null>(null);
+  const [gameMode, setGameMode] = React.useState<GameMode>('classic');
   const [questions, setQuestions] = React.useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [score, setScore] = React.useState(0);
@@ -44,6 +70,8 @@ export default function App() {
   const [maxStreak, setMaxStreak] = React.useState(0);
   const [correctCount, setCorrectCount] = React.useState(0);
   const [used5050, setUsed5050] = React.useState(false);
+  const [lives, setLives] = React.useState(3);
+  const [hasShield, setHasShield] = React.useState(true);
   const [showExplanation, setShowExplanation] = React.useState(false);
   const [lastSelectedOption, setLastSelectedOption] = React.useState<number | null>(null);
   const [isQuizCompleted, setIsQuizCompleted] = React.useState(false);
@@ -51,7 +79,16 @@ export default function App() {
   // AI & Badges & Sharing
   const [aiHintText, setAiHintText] = React.useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
-  const [unlockedBadgeIds, setUnlockedBadgeIds] = React.useState<string[]>(['badge_first_step']);
+  const [unlockedBadgeIds, setUnlockedBadgeIds] = React.useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('user_badges');
+      return saved ? JSON.parse(saved) : ['badge_first_step'];
+    } catch {
+      return ['badge_first_step'];
+    }
+  });
+  const [toastBadge, setToastBadge] = React.useState<Badge | null>(null);
+
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showBackgroundModal, setShowBackgroundModal] = React.useState(false);
   const [bgSettings, setBgSettings] = React.useState<BackgroundSettings>(() => {
@@ -104,6 +141,22 @@ export default function App() {
 
   React.useEffect(() => {
     try {
+      localStorage.setItem('user_badges', JSON.stringify(unlockedBadgeIds));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [unlockedBadgeIds]);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('completed_museum_halls', JSON.stringify(completedHalls));
+    } catch (e) {
+      console.warn('Failed to save completed_museum_halls', e);
+    }
+  }, [completedHalls]);
+
+  React.useEffect(() => {
+    try {
       localStorage.setItem('quiz_bg_settings', JSON.stringify(bgSettings));
     } catch (e) {
       console.warn('Failed to save quiz_bg_settings to localStorage', e);
@@ -114,27 +167,59 @@ export default function App() {
     setBgSettings(newSettings);
   };
 
-  // Handle level select
-  const handleSelectLevel = (level: Difficulty | 'mixed') => {
+  // Helper to trigger gamified badge unlocks with sound & toast banner
+  const triggerUnlockBadge = (badgeId: string) => {
+    if (!unlockedBadgeIds.includes(badgeId)) {
+      setUnlockedBadgeIds((prev) => [...prev, badgeId]);
+      const found = ALL_BADGES.find((b) => b.id === badgeId);
+      if (found) {
+        setToastBadge(found);
+        soundFx.playAchievement();
+        setTimeout(() => setToastBadge(null), 5000);
+      }
+    }
+  };
+
+  // Handle level & mode select
+  const handleSelectLevel = (level: HallSelection, mode: GameMode = 'classic') => {
     if (!playerName.trim() || !playerLocation.trim()) {
       setPendingLevel(level);
+      setPendingMode(mode);
       setShowRegistrationModal(true);
       return;
     }
 
-    startQuizWithLevel(level);
+    startQuizWithLevel(level, mode);
   };
 
-  const startQuizWithLevel = (level: Difficulty | 'mixed') => {
+  const startQuizWithLevel = (level: HallSelection, mode: GameMode = 'classic') => {
     setSelectedLevel(level);
+    setGameMode(mode);
     let pool: Question[] = [];
 
-    if (level === 'easy') pool = [...EASY_QUESTIONS];
-    else if (level === 'medium') pool = [...MEDIUM_QUESTIONS];
-    else if (level === 'hard') pool = [...HARD_QUESTIONS];
-    else pool = [...EASY_QUESTIONS, ...MEDIUM_QUESTIONS, ...HARD_QUESTIONS];
+    if (level === 'easy') {
+      pool = [...EASY_QUESTIONS];
+    } else if (level === 'medium') {
+      pool = [...MEDIUM_QUESTIONS];
+    } else if (level === 'hard') {
+      pool = [...HARD_QUESTIONS];
+    } else if (level === 'mixed') {
+      pool = [...EASY_QUESTIONS, ...MEDIUM_QUESTIONS, ...HARD_QUESTIONS];
+    } else if (typeof level === 'string' && level.startsWith('hall_')) {
+      // Thematic Hall
+      const hall = MUSEUM_HALLS.find((h) => h.id === level);
+      const all = [...EASY_QUESTIONS, ...MEDIUM_QUESTIONS, ...HARD_QUESTIONS];
+      if (hall) {
+        pool = all.filter((q) => hall.categories.includes(q.category));
+      }
+      if (pool.length === 0) {
+        pool = [...EASY_QUESTIONS];
+      }
+    } else {
+      pool = [...EASY_QUESTIONS];
+    }
 
-    // Shuffle
+    // Shuffle questions
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     setQuestions(shuffled);
     setCurrentIndex(0);
@@ -143,6 +228,8 @@ export default function App() {
     setMaxStreak(0);
     setCorrectCount(0);
     setUsed5050(false);
+    setLives(3);
+    setHasShield(true);
     setShowExplanation(false);
     setIsQuizCompleted(false);
     setAiHintText(null);
@@ -154,30 +241,61 @@ export default function App() {
     setShowRegistrationModal(false);
 
     if (pendingLevel) {
-      startQuizWithLevel(pendingLevel);
+      startQuizWithLevel(pendingLevel, pendingMode);
       setPendingLevel(null);
     }
   };
 
   // Answer handler
-  const handleAnswer = (selectedIndex: number, timeSpent: number) => {
+  const handleAnswer = (selectedIndex: number, timeSpent: number, usedShieldProtection: boolean = false) => {
     const currentQ = questions[currentIndex];
     setLastSelectedOption(selectedIndex);
 
     if (currentQ && selectedIndex === currentQ.correctIndex) {
-      const timeBonus = Math.max(0, 30 - timeSpent) * 5;
-      const streakBonus = streak * 20;
+      // Dynamic speed and combo multipliers
+      const maxTime = gameMode === 'timed' ? 15 : 30;
+      const timeBonus = Math.max(0, maxTime - timeSpent) * (gameMode === 'timed' ? 10 : 5);
+      const comboMultiplier = streak >= 5 ? 3 : streak >= 3 ? 2 : streak >= 2 ? 1.5 : 1;
+      const streakBonus = Math.round(streak * 20 * comboMultiplier);
       const pointsEarned = 100 + timeBonus + streakBonus;
 
-      setScore((prev) => prev + pointsEarned);
+      setScore((prev) => {
+        const nextScore = prev + pointsEarned;
+        if (nextScore >= 1500) {
+          triggerUnlockBadge('badge_grandmaster');
+        }
+        return nextScore;
+      });
       setCorrectCount((prev) => prev + 1);
+
       setStreak((prev) => {
         const next = prev + 1;
         if (next > maxStreak) setMaxStreak(next);
+        if (next >= 5) {
+          triggerUnlockBadge('badge_combo_master');
+        }
         return next;
       });
     } else {
-      setStreak(0);
+      // Wrong answer or timed out
+      if (usedShieldProtection) {
+        // Shield absorbs the mistake!
+        setHasShield(false);
+      } else {
+        setStreak(0);
+        if (gameMode === 'survival') {
+          soundFx.playLifeLost();
+          const nextLives = lives - 1;
+          setLives(nextLives);
+          if (nextLives <= 0) {
+            // Survival Game Over!
+            setTimeout(() => {
+              finishQuiz();
+            }, 800);
+            return;
+          }
+        }
+      }
     }
 
     setShowExplanation(true);
@@ -204,8 +322,8 @@ export default function App() {
     // Trigger Confetti
     try {
       confetti({
-        particleCount: 120,
-        spread: 80,
+        particleCount: 140,
+        spread: 85,
         origin: { y: 0.6 }
       });
     } catch (e) {
@@ -214,12 +332,54 @@ export default function App() {
 
     const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
 
+    // Determine current hall title
+    let currentHallTitle = 'Тематический зал экспозиции';
+    if (typeof selectedLevel === 'string' && selectedLevel.startsWith('hall_')) {
+      const hObj = MUSEUM_HALLS.find((h) => h.id === selectedLevel);
+      if (hObj) currentHallTitle = hObj.title;
+    } else if (selectedLevel === 'easy') {
+      currentHallTitle = 'Зал «Юный Краевед»';
+    } else if (selectedLevel === 'medium') {
+      currentHallTitle = 'Экспозиционный зал «Знаток Края»';
+    } else if (selectedLevel === 'hard') {
+      currentHallTitle = 'Архивный зал «Хранитель Истории»';
+    } else {
+      currentHallTitle = 'Сборный зал «Микс-Экспозиция»';
+    }
+
+    // Register hall completion
+    const hallRecord: CompletedHallRecord = {
+      hallId: (selectedLevel as string) || 'hall_general',
+      hallTitle: currentHallTitle,
+      score,
+      accuracy,
+      completedAt: new Date().toISOString()
+    };
+
+    setCompletedHalls((prev) => {
+      const existingIdx = prev.findIndex((h) => h.hallId === hallRecord.hallId);
+      let updated: CompletedHallRecord[];
+      if (existingIdx >= 0) {
+        updated = [...prev];
+        if (score > updated[existingIdx].score) {
+          updated[existingIdx] = hallRecord;
+        }
+      } else {
+        updated = [...prev, hallRecord];
+      }
+
+      // Check if minimum 2 thematic halls requirement reached!
+      if (updated.length >= 2) {
+        triggerUnlockBadge('badge_museum_ticket');
+      }
+      return updated;
+    });
+
     // Badges check
-    const newBadges = [...unlockedBadgeIds];
-    if (selectedLevel === 'easy' && accuracy === 100) newBadges.push('badge_young_expert');
-    if (selectedLevel === 'medium' && score >= 1000) newBadges.push('badge_region_master');
-    if (selectedLevel === 'hard') newBadges.push('badge_history_keeper');
-    setUnlockedBadgeIds(Array.from(new Set(newBadges)));
+    if (selectedLevel === 'easy' && accuracy === 100) triggerUnlockBadge('badge_young_expert');
+    if (selectedLevel === 'medium' && score >= 1000) triggerUnlockBadge('badge_region_master');
+    if (selectedLevel === 'hard') triggerUnlockBadge('badge_history_keeper');
+    if (gameMode === 'survival' && correctCount >= 5) triggerUnlockBadge('badge_survival_hero');
 
     // Save record to Firebase
     const record: Omit<LeaderboardRecord, 'id'> = {
@@ -278,6 +438,9 @@ export default function App() {
       bgSettings.type === 'default' && !bgSettings.url ? 'bg-slate-50 dark:bg-slate-950' : 'bg-transparent'
     }`}>
       
+      {/* Toast Notification for Unlocked Achievements */}
+      <AchievementToast badge={toastBadge} onClose={() => setToastBadge(null)} />
+
       {/* Custom/Preset Wallpaper Layer */}
       {bgSettings.type !== 'default' && bgSettings.url && (
         <>
@@ -305,15 +468,26 @@ export default function App() {
 
       {/* Main App Container */}
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Navigation Header */}
+        {/* Navigation Header with Audio Widget */}
         <Header
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={(tab) => {
+            if (tab === 'ticket') {
+              if (completedHalls.length >= 2) {
+                triggerUnlockBadge('badge_museum_ticket');
+              }
+            }
+            if (tab === 'certificate') {
+              triggerUnlockBadge('badge_certified_scholar');
+            }
+            setActiveTab(tab);
+          }}
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
           playerName={playerName}
           setPlayerName={setPlayerName}
           totalScore={score}
+          completedHallsCount={completedHalls.length}
           onOpenBackgroundModal={() => setShowBackgroundModal(true)}
         />
 
@@ -326,6 +500,7 @@ export default function App() {
               <LevelSelector
                 onSelectLevel={handleSelectLevel}
                 onNavigateTab={(tab) => setActiveTab(tab)}
+                completedHalls={completedHalls}
               />
             ) : isQuizCompleted ? (
               /* Quiz Summary Screen */
@@ -338,10 +513,10 @@ export default function App() {
 
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                      Викторина завершена
+                      {gameMode === 'survival' && lives <= 0 ? 'Испытание на выживание окончено' : 'Зал экспозиции успешно пройден'}
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 dark:text-white mt-1">
-                      Поздравляем, {playerName}!
+                      Поздравляем, {playerName || 'Участник'}!
                     </h2>
                   </div>
 
@@ -359,20 +534,84 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Promo Privilege Alert / 2-hall requirement check */}
+                  {completedHalls.length >= 2 ? (
+                    <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 text-xs flex items-center gap-3 text-left">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <Ticket className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm">🎉 Квест выполнен! Билет в музей разблокирован!</p>
+                        <p className="text-[11px] opacity-90">
+                          Вы успешно завершили {completedHalls.length} тематических залов музея. Персональный билет с промокодом доступен!
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-400 dark:border-amber-700 text-amber-950 dark:text-amber-100 text-xs flex items-center gap-3 text-left">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <Compass className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm">Квест на билет: пройдено {completedHalls.length} из 2 залов</p>
+                        <p className="text-[11px] opacity-90">
+                          Пройдите ещё <strong>{2 - completedHalls.length}</strong> тематический зал, чтобы получить официальный именной билет со скидкой до 100%!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-xs text-slate-600 dark:text-slate-300 italic">
                     Ваш результат сохранен в Облачной Таблице Лидеров.
                   </p>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    {completedHalls.length >= 2 ? (
+                      <button
+                        onClick={() => {
+                          soundFx.playClick();
+                          triggerUnlockBadge('badge_museum_ticket');
+                          setActiveTab('ticket');
+                        }}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
+                      >
+                        <Ticket className="w-4 h-4" />
+                        Мой билет в музей
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          soundFx.playClick();
+                          setSelectedLevel(null);
+                        }}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/20 transition-all hover:scale-105"
+                      >
+                        <Compass className="w-4 h-4" />
+                        Пройти 2-й зал для билета ({completedHalls.length}/2)
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        soundFx.playClick();
+                        triggerUnlockBadge('badge_certified_scholar');
+                        setActiveTab('certificate');
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg shadow-amber-500/20 transition-all"
+                    >
+                      <Scroll className="w-4 h-4" />
+                      Именной диплом
+                    </button>
+
                     <button
                       onClick={() => {
                         soundFx.playClick();
                         setShowShareModal(true);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 transition-all"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/20 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-white/30 border border-white/20 transition-all"
                     >
                       <Share2 className="w-4 h-4" />
-                      Поделиться и получить Сертификат
+                      Поделиться
                     </button>
 
                     <button
@@ -380,10 +619,10 @@ export default function App() {
                         soundFx.playClick();
                         setSelectedLevel(null);
                       }}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition-colors"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition-colors"
                     >
                       <RotateCcw className="w-4 h-4" />
-                      Выбрать другой уровень
+                      Выбрать зал
                     </button>
                   </div>
 
@@ -404,8 +643,10 @@ export default function App() {
                       ← Сменить уровень
                     </button>
 
-                    <div className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-400/10 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-amber-500/30">
-                      Счет: {score} б.
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-400/10 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-amber-500/30">
+                        Счет: {score} б.
+                      </div>
                     </div>
                   </div>
 
@@ -415,6 +656,10 @@ export default function App() {
                     totalQuestions={questions.length}
                     score={score}
                     streak={streak}
+                    gameMode={gameMode}
+                    lives={lives}
+                    hasShield={hasShield}
+                    onUseShield={() => setHasShield(false)}
                     onAnswer={handleAnswer}
                     used5050={used5050}
                     setUsed5050={setUsed5050}
@@ -428,31 +673,92 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: BLITZ */}
+        {/* TAB 2: ARTIFACTS / EXHIBIT MINI-GAME */}
+        {activeTab === 'artifacts' && (
+          <ExhibitMiniGame
+            onScoreAwarded={(pts) => {
+              setScore((s) => s + pts);
+              try {
+                const saved = localStorage.getItem('unlocked_exhibits');
+                if (saved) {
+                  setUnlockedExhibitsCount(JSON.parse(saved).length);
+                }
+              } catch (e) {
+                console.warn(e);
+              }
+              triggerUnlockBadge('badge_museum_keeper');
+            }}
+            onOpenCertificate={() => {
+              triggerUnlockBadge('badge_certified_scholar');
+              setActiveTab('certificate');
+            }}
+          />
+        )}
+
+        {/* TAB 3: PERSONAL CERTIFICATE / DIPLOMA */}
+        {activeTab === 'certificate' && (
+          <CertificateView
+            playerName={playerName}
+            setPlayerName={setPlayerName}
+            playerLocation={playerLocation}
+            setPlayerLocation={setPlayerLocation}
+            totalScore={score}
+            unlockedExhibitsCount={unlockedExhibitsCount}
+          />
+        )}
+
+        {/* TAB 4: PERSONAL MUSEUM TICKET & PROMOCODE */}
+        {activeTab === 'ticket' && (
+          <MuseumTicketView
+            playerName={playerName}
+            playerLocation={playerLocation}
+            totalScore={score}
+            unlockedExhibitsCount={unlockedExhibitsCount}
+            completedHalls={completedHalls}
+            onStartHall={(hallId) => {
+              handleSelectLevel(hallId, gameMode);
+              setActiveTab('quiz');
+            }}
+            onNavigateToQuiz={() => {
+              setSelectedLevel(null);
+              setActiveTab('quiz');
+            }}
+          />
+        )}
+
+        {/* TAB 5: BLITZ */}
         {activeTab === 'blitz' && (
           <BlitzGame
             onFinishBlitz={(blitzScore) => {
               setScore((s) => s + blitzScore);
-              // Unlock blitz badge if blitz played
-              if (!unlockedBadgeIds.includes('badge_blitz_lightning')) {
-                setUnlockedBadgeIds((prev) => [...prev, 'badge_blitz_lightning']);
-              }
+              triggerUnlockBadge('badge_blitz_lightning');
               setActiveTab('leaderboard');
             }}
           />
         )}
 
-        {/* TAB 3: LEADERBOARD */}
+        {/* TAB 6: LEADERBOARD */}
         {activeTab === 'leaderboard' && (
           <Leaderboard currentScoreRecord={lastRecord} />
         )}
 
-        {/* TAB 5: BADGES & MUSEUM */}
+        {/* TAB 7: BADGES & MUSEUM */}
         {activeTab === 'badges' && (
-          <BadgeGallery unlockedBadgeIds={unlockedBadgeIds} />
+          <BadgeGallery 
+            unlockedBadgeIds={unlockedBadgeIds} 
+            onOpenCertificate={() => {
+              triggerUnlockBadge('badge_certified_scholar');
+              setActiveTab('certificate');
+            }}
+            onOpenMiniGame={() => setActiveTab('artifacts')}
+            onOpenTicket={() => {
+              triggerUnlockBadge('badge_museum_ticket');
+              setActiveTab('ticket');
+            }}
+          />
         )}
 
-        {/* TAB 6: AI EXPERT */}
+        {/* TAB 8: AI EXPERT */}
         {activeTab === 'ai' && (
           <AiExpertChat initialTopic={aiChatTopic} initialQuestion={aiChatQuestion} />
         )}

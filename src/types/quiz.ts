@@ -1,12 +1,20 @@
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type GameMode = 'classic' | 'timed' | 'survival';
+
 export type QuestionCategory = 
   | 'neftegorsk' 
   | 'utevka' 
   | 'barinovka' 
   | 'samara_region' 
   | 'nature_and_rivers' 
-  | 'museum_nkm';
+  | 'museum_nkm'
+  | 'industry'
+  | 'architecture'
+  | 'museum'
+  | 'nature';
+
+export type HallSelection = Difficulty | 'mixed' | string;
 
 export interface Question {
   id: string;

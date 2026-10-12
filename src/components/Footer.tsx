@@ -3,7 +3,7 @@ import { BookOpen, ExternalLink, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-transparent border-t border-white/10 dark:border-white/5 py-8 px-4 mt-12 transition-colors">
+    <footer className="bg-white/8 dark:bg-slate-950/20 backdrop-blur-xs border-t border-white/15 dark:border-white/10 py-8 px-4 mt-12 transition-colors">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs text-slate-800 dark:text-slate-200">
         <div>
           <div className="flex items-center justify-center md:justify-start gap-2 text-slate-900 dark:text-white font-bold mb-1">
@@ -20,7 +20,7 @@ export const Footer: React.FC = () => {
             href="https://nkm63.ru/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-transparent hover:bg-white/20 dark:hover:bg-white/10 text-amber-800 dark:text-amber-300 border border-amber-600/30 dark:border-amber-400/30 font-bold transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-400/10 text-amber-800 dark:text-amber-300 border border-amber-600/30 dark:border-amber-400/30 font-bold backdrop-blur-xs transition-colors"
           >
             <span>Официальный сайт nkm63.ru</span>
             <ExternalLink className="w-3.5 h-3.5" />

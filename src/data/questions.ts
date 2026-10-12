@@ -239,6 +239,30 @@ export const MEDIUM_QUESTIONS: Question[] = [
     hint: 'Вращается только поворотный купол (шатер) на вершине.'
   },
   {
+    id: 'm7_b',
+    level: 'medium',
+    category: 'barinovka',
+    categoryTitle: 'Жернова Бариновки',
+    text: 'Из какого природного материала изготавливались тяжелые жернова для помола зерна на Бариновской мельнице?',
+    options: ['Из монолитного кварцита / твердого песчаника', 'Из дубового бруса', 'Из чугунного сплава', 'Из речной глины'],
+    correctIndex: 0,
+    explanation: 'Жернова вырубались из особо твердых кварцито-песчаниковых пород, способных выдерживать трение и не загрязнять муку каменной пылью.',
+    historicalFact: 'Вес одного мельничного жернова достигал сотен килограммов, а насечку на его поверхности периодически обновляли вручную.',
+    hint: 'Твердая горная порода с зернами кварца.'
+  },
+  {
+    id: 'm7_c',
+    level: 'medium',
+    category: 'utevka',
+    categoryTitle: 'Утёвские святыни',
+    text: 'В каком году был освящен монументальный трехпрестольный Храм Святой Троицы в селе Утёвка, расписанный Григорием Журавлёвым?',
+    options: ['В 1892 году', 'В 1700 году', 'В 1945 году', 'В 1812 году'],
+    correctIndex: 0,
+    explanation: 'Храм Святой Троицы в Утёвке строился на народные пожертвования и был освящен в 1892 году, став жемчужиной Самарской епархии.',
+    historicalFact: 'Григорий Журавлёв лично расписывал купол храма, лежа в специальной люльке под самым сводом.',
+    hint: 'Конец XIX века, за четверть века до революционных событий.'
+  },
+  {
     id: 'm8',
     level: 'medium',
     category: 'nature_and_rivers',
@@ -653,6 +677,54 @@ export const ALL_BADGES: Badge[] = [
     description: 'Исследуйте все точки на Интерактивной карте Нефтегорского района',
     icon: 'MapPin',
     color: 'from-teal-500 to-cyan-700',
+    unlocked: false
+  },
+  {
+    id: 'badge_museum_keeper',
+    title: 'Хранитель Экспонатов',
+    description: 'Разгадайте музейные артефакты в мини-игре «Угадай экспонат»',
+    icon: 'Eye',
+    color: 'from-amber-600 to-yellow-500',
+    unlocked: false
+  },
+  {
+    id: 'badge_certified_scholar',
+    title: 'Дипломированный Знаток',
+    description: 'Сформируйте именной диплом знатока Нефтегорского музея',
+    icon: 'Scroll',
+    color: 'from-rose-500 to-red-700',
+    unlocked: false
+  },
+  {
+    id: 'badge_combo_master',
+    title: 'Мастер Комбо 5x',
+    description: 'Достигните непрерывной серии из 5 верных ответов подряд',
+    icon: 'Flame',
+    color: 'from-orange-500 to-red-600',
+    unlocked: false
+  },
+  {
+    id: 'badge_survival_hero',
+    title: 'Неуязвимый Исследователь',
+    description: 'Пройдите испытание в хардкор-режиме «Выживание»',
+    icon: 'Shield',
+    color: 'from-emerald-500 to-teal-700',
+    unlocked: false
+  },
+  {
+    id: 'badge_museum_ticket',
+    title: 'Билет в Музей',
+    description: 'Пройдите минимум 2 тематических зала экспозиции и получите персональный билет в музей',
+    icon: 'Ticket',
+    color: 'from-amber-500 to-emerald-600',
+    unlocked: false
+  },
+  {
+    id: 'badge_grandmaster',
+    title: 'Гроссмейстер Краеведения',
+    description: 'Наберите свыше 1500 очков в музейной экспозиции',
+    icon: 'Trophy',
+    color: 'from-amber-400 to-amber-700',
     unlocked: false
   }
 ];
