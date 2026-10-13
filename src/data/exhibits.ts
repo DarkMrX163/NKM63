@@ -1,3 +1,5 @@
+import { EXHIBIT_IMAGES } from './exhibitImages';
+
 export interface MuseumExhibit {
   id: string;
   name: string;
@@ -41,7 +43,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'windmill',
-    imageUrl: '/images/exhibits/windmill.jpg',
+    imageUrl: EXHIBIT_IMAGES.windmill || '/images/exhibits/windmill.jpg',
     imageSource: 'Реальная фотография Бариновской мельницы (август 2023 г.)',
     zoomCoordinates: { x: 50, y: 36, initialZoom: 3.2 }
   },
@@ -64,7 +66,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'iron',
-    imageUrl: '/images/exhibits/iron.jpg',
+    imageUrl: EXHIBIT_IMAGES.iron || '/images/exhibits/iron.jpg',
     imageSource: 'Реальная музейная фотография антикварного угольного утюга',
     zoomCoordinates: { x: 70, y: 45, initialZoom: 3.4 }
   },
@@ -87,7 +89,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'oilpump',
-    imageUrl: '/images/exhibits/oilpump.jpg',
+    imageUrl: EXHIBIT_IMAGES.oilpump || '/images/exhibits/oilpump.jpg',
     imageSource: 'Реальная фотография действующего станка-качалки нефтепромыслов',
     zoomCoordinates: { x: 40, y: 35, initialZoom: 3.0 }
   },
@@ -110,7 +112,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'icon',
-    imageUrl: '/images/exhibits/icon.jpg',
+    imageUrl: EXHIBIT_IMAGES.icon || '/images/exhibits/icon.jpg',
     imageSource: 'Реальная музейная фотография русской иконы конца XIX века',
     zoomCoordinates: { x: 50, y: 32, initialZoom: 3.2 }
   },
@@ -133,7 +135,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'samovar',
-    imageUrl: '/images/exhibits/samovar.jpg',
+    imageUrl: EXHIBIT_IMAGES.samovar || '/images/exhibits/samovar.jpg',
     imageSource: 'Реальная фотография антикварного жарового самовара с клеймами',
     zoomCoordinates: { x: 50, y: 62, initialZoom: 3.3 }
   },
@@ -156,7 +158,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'spinning_wheel',
-    imageUrl: '/images/exhibits/spinning_wheel.jpg',
+    imageUrl: EXHIBIT_IMAGES.spinning_wheel || '/images/exhibits/spinning_wheel.jpg',
     imageSource: 'Реальная музейная фотография русских резных прялок',
     zoomCoordinates: { x: 50, y: 38, initialZoom: 3.2 }
   },
@@ -179,7 +181,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'arrowhead',
-    imageUrl: '/images/exhibits/arrowhead.jpg',
+    imageUrl: EXHIBIT_IMAGES.arrowhead || '/images/exhibits/arrowhead.jpg',
     imageSource: 'Реальная музейная фотография бронзовых наконечников раннего железного века',
     zoomCoordinates: { x: 50, y: 48, initialZoom: 3.4 }
   },
@@ -202,7 +204,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'ammonite',
-    imageUrl: '/images/exhibits/ammonite.jpg',
+    imageUrl: EXHIBIT_IMAGES.ammonite || '/images/exhibits/ammonite.jpg',
     imageSource: 'Реальная фотография палеонтологического образца аммонита',
     zoomCoordinates: { x: 50, y: 50, initialZoom: 3.3 }
   },
@@ -225,7 +227,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'pottery',
-    imageUrl: '/images/exhibits/pottery.jpg',
+    imageUrl: EXHIBIT_IMAGES.pottery || '/images/exhibits/pottery.jpg',
     imageSource: 'Реальная музейная фотография старинной керамической крынки',
     zoomCoordinates: { x: 50, y: 32, initialZoom: 3.0 }
   },
@@ -248,7 +250,7 @@ export const MUSEUM_EXHIBITS: MuseumExhibit[] = [
     ],
     correctOptionIndex: 0,
     type: 'lamp',
-    imageUrl: '/images/exhibits/lamp.jpg',
+    imageUrl: EXHIBIT_IMAGES.lamp || '/images/exhibits/lamp.jpg',
     imageSource: 'Реальная фотография классической ветроустойчивой керосиновой лампы',
     zoomCoordinates: { x: 50, y: 45, initialZoom: 3.2 }
   }

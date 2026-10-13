@@ -1,5 +1,6 @@
 import React from 'react';
-import { Camera, Search, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Camera, Search, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { EXHIBIT_IMAGES } from '../data/exhibitImages';
 
 interface ExhibitIllustrationProps {
   type: string;
@@ -12,54 +13,44 @@ interface ExhibitIllustrationProps {
   className?: string;
 }
 
-const EXHIBIT_IMAGE_MAP: Record<string, { src: string; alt: string; sourceText: string }> = {
+const EXHIBIT_INFO_MAP: Record<string, { alt: string; sourceText: string }> = {
   windmill: {
-    src: '/images/exhibits/windmill.jpg',
     alt: 'Бариновская ветряная мельница (1848 г.)',
     sourceText: 'Реальное фото: с. Бариновка, Нефтегорский район'
   },
   iron: {
-    src: '/images/exhibits/iron.jpg',
     alt: 'Старинный чугунный угольный утюг',
     sourceText: 'Реальное фото: Музейный фонд Поволжья'
   },
   oilpump: {
-    src: '/images/exhibits/oilpump.jpg',
     alt: 'Станок-качалка нефтяников',
     sourceText: 'Реальное фото: Нефтепромысел Заволжья'
   },
   icon: {
-    src: '/images/exhibits/icon.jpg',
     alt: 'Старинная русская икона конца XIX века',
     sourceText: 'Реальное фото: Сакральное искусство'
   },
   samovar: {
-    src: '/images/exhibits/samovar.jpg',
     alt: 'Жаровой медный самовар с медалями',
     sourceText: 'Реальное фото: Экспонат музея купеческого быта'
   },
   spinning_wheel: {
-    src: '/images/exhibits/spinning_wheel.jpg',
     alt: 'Деревянная резная прялка с солярным узором',
     sourceText: 'Реальное фото: Музей этнографии'
   },
   arrowhead: {
-    src: '/images/exhibits/arrowhead.jpg',
     alt: 'Сарматские бронзовые наконечники стрел',
     sourceText: 'Реальное фото: Археологический фонд'
   },
   ammonite: {
-    src: '/images/exhibits/ammonite.jpg',
     alt: 'Окаменелость раковины аммонита с перламутром',
     sourceText: 'Реальное фото: Палеонтологическая коллекция'
   },
   pottery: {
-    src: '/images/exhibits/pottery.jpg',
     alt: 'Глиняная гончарная крынка для молока',
     sourceText: 'Реальное фото: Традиционная керамика'
   },
   lamp: {
-    src: '/images/exhibits/lamp.jpg',
     alt: 'Керосиновая лампа «Летучая мышь»',
     sourceText: 'Реальное фото: Светильник первопроходцев-буровиков'
   }
@@ -75,23 +66,66 @@ export const ExhibitIllustration: React.FC<ExhibitIllustrationProps> = ({
   isRevealed = false,
   className = ''
 }) => {
-  const itemInfo = EXHIBIT_IMAGE_MAP[type] || {
-    src: imageUrl || `/images/exhibits/${type}.jpg`,
+  const itemInfo = EXHIBIT_INFO_MAP[type] || {
     alt: 'Музейный экспонат',
     sourceText: 'Реальное архивное фото'
   };
 
-  const imageSrc = imageUrl || itemInfo.src;
-  const sourceLabel = imageSource || itemInfo.sourceText;
+  // Determine initial sources (bundled asset first, then provided URL, then public directory)
+  const bundledSrc = EXHIBIT_IMAGES[type];
+  const publicSrc = `/images/exhibits/${type}.jpg`;
+
+  const [activeSrc, setActiveSrc] = React.useState<string>(() => {
+    return bundledSrc || imageUrl || publicSrc;
+  });
 
   const [imageLoaded, setImageLoaded] = React.useState(false);
-  const [loadError, setLoadError] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
+  const [attempt, setAttempt] = React.useState(0);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
-  // Reset load state when type or url changes
+  // Sync activeSrc when type or imageUrl changes
   React.useEffect(() => {
+    const primary = bundledSrc || imageUrl || publicSrc;
+    setActiveSrc(primary);
     setImageLoaded(false);
-    setLoadError(false);
-  }, [type, imageSrc]);
+    setHasError(false);
+    setAttempt(0);
+  }, [type, imageUrl, bundledSrc, publicSrc]);
+
+  // Handle immediate cached image load check
+  React.useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setImageLoaded(true);
+      setHasError(false);
+    }
+  }, [activeSrc]);
+
+  const handleImageError = () => {
+    // If bundled failed, try public path
+    if (attempt === 0 && activeSrc !== publicSrc) {
+      setAttempt(1);
+      setActiveSrc(publicSrc);
+      return;
+    }
+    // If public path failed, try bundled asset
+    if (attempt === 0 && bundledSrc && activeSrc !== bundledSrc) {
+      setAttempt(1);
+      setActiveSrc(bundledSrc);
+      return;
+    }
+    setHasError(true);
+    setImageLoaded(false);
+  };
+
+  const handleRetry = () => {
+    setHasError(false);
+    setImageLoaded(false);
+    const nextSrc = bundledSrc || publicSrc;
+    setActiveSrc(`${nextSrc}?t=${Date.now()}`);
+  };
+
+  const sourceLabel = imageSource || itemInfo.sourceText;
 
   // Transform style for zooming on the focal point
   const transformStyle: React.CSSProperties = {
@@ -110,7 +144,7 @@ export const ExhibitIllustration: React.FC<ExhibitIllustrationProps> = ({
       <div className="absolute inset-0 bg-radial from-neutral-800/80 via-neutral-900 to-black pointer-events-none z-0" />
 
       {/* Loading Skeleton */}
-      {!imageLoaded && !loadError && (
+      {!imageLoaded && !hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/90 z-20">
           <div className="w-10 h-10 border-3 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-3" />
           <span className="text-xs font-semibold text-amber-300/80 tracking-wide">
@@ -119,15 +153,43 @@ export const ExhibitIllustration: React.FC<ExhibitIllustrationProps> = ({
         </div>
       )}
 
+      {/* Fallback View if Image Failed completely */}
+      {hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950 p-6 text-center z-20 space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+            <Camera className="w-7 h-7" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-1">
+              {itemInfo.alt}
+            </h4>
+            <p className="text-xs text-amber-300/80">
+              Подлинный экспонат краеведческого фонда
+            </p>
+          </div>
+          <button
+            onClick={handleRetry}
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Обновить фото
+          </button>
+        </div>
+      )}
+
       {/* Real Museum Photograph */}
       <div className="w-full h-full flex items-center justify-center overflow-hidden">
         <img
-          src={imageSrc}
+          ref={imgRef}
+          src={activeSrc}
           alt={itemInfo.alt}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setLoadError(true)}
+          onLoad={() => {
+            setImageLoaded(true);
+            setHasError(false);
+          }}
+          onError={handleImageError}
           style={transformStyle}
-          className={`w-full h-full object-cover sm:object-contain transition-opacity duration-500 will-change-transform ${
+          className={`w-full h-full object-cover sm:object-contain transition-opacity duration-300 will-change-transform ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           loading="eager"
@@ -135,7 +197,7 @@ export const ExhibitIllustration: React.FC<ExhibitIllustrationProps> = ({
       </div>
 
       {/* Loupe Optics Overlay (Visible when zoomed in during discovery mode) */}
-      {isZoomed && (
+      {isZoomed && !hasError && (
         <div className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-300">
           {/* Vignette shadow to focus gaze on the center */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_85%,rgba(0,0,0,0.9)_100%)]" />
