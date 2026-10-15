@@ -16,6 +16,7 @@ import { RegistrationModal } from './components/RegistrationModal';
 import { BackgroundModal, BackgroundSettings, DEFAULT_BG_SETTINGS } from './components/BackgroundModal';
 import { AchievementToast } from './components/AchievementToast';
 import { MuseumDetective } from './components/MuseumDetective';
+import { PhotoArchive } from './components/PhotoArchive';
 import { Footer } from './components/Footer';
 
 import { Difficulty, Question, GameMode, Badge, HallSelection } from './types/quiz';
@@ -693,6 +694,11 @@ export default function App() {
               )
             )}
           </div>
+        )}
+
+        {/* TAB: PHOTO ARCHIVE */}
+        {activeTab === 'photoarchive' && (
+          <PhotoArchive />
         )}
 
         {/* TAB: MUSEUM DETECTIVE / ARCHIVIST */}

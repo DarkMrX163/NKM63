@@ -15,7 +15,8 @@ import {
   Lock,
   Compass,
   Landmark,
-  Search
+  Search,
+  Camera
 } from 'lucide-react';
 import { Difficulty, GameMode, HallSelection } from '../types/quiz';
 import { soundFx } from '../utils/audio';
