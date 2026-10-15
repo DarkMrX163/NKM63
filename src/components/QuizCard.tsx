@@ -92,7 +92,30 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       clearInterval(interval);
       soundFx.stopSpeech();
     };
-  }, [question.id, initialTime]);
+  }, [questionIndex, gameMode]);
+
+  // Keyboard shortcut listener (1, 2, 3, 4 or А, Б, В, Г or A, B, C, D)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedOption !== null) return;
+      // Ignore if typing in input
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      const key = e.key.toLowerCase();
+      let index: number | null = null;
+      if (key === '1' || key === 'a' || key === 'а') index = 0;
+      else if (key === '2' || key === 'b' || key === 'б') index = 1;
+      else if (key === '3' || key === 'c' || key === 'в') index = 2;
+      else if (key === '4' || key === 'd' || key === 'г') index = 3;
+
+      if (index !== null && index < question.options.length && !hiddenOptions.includes(index)) {
+        handleSelectOption(index);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedOption, question.options, hiddenOptions, question.correctIndex]);
 
   const handleSelectOption = (index: number) => {
     if (selectedOption !== null) return;
@@ -117,7 +140,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
 
     setTimeout(() => {
       onAnswer(index, timeSpent, shieldActiveForCurrent);
-    }, 1200);
+    }, 2500);
   };
 
   const handleUse5050 = () => {
@@ -155,213 +178,241 @@ export const QuizCard: React.FC<QuizCardProps> = ({
 
   // Combo multiplier calculation
   const comboMultiplier = streak >= 5 ? 3 : streak >= 3 ? 2 : streak >= 2 ? 1.5 : 1;
+  const isAnswered = selectedOption !== null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-      {/* Top Status Bar */}
-      <div className="bg-white/65 dark:bg-slate-900/65 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/50 dark:border-slate-800 shadow-lg mb-6 flex flex-wrap items-center justify-between gap-4">
+      {/* Top Status Bar - Zero Pill Discipline */}
+      <div className={`bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl p-4 sm:p-5 border transition-all duration-300 shadow-xl mb-6 ${
+        shieldActiveForCurrent 
+          ? 'border-emerald-500/80 shadow-emerald-500/20 ring-2 ring-emerald-500/30' 
+          : 'border-white/60 dark:border-slate-800'
+      }`}>
         
-        {/* Progress & Mode badge */}
-        <div className="flex items-center gap-3">
-          <div className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
-            Вопрос <span className="text-amber-500 text-base font-extrabold">{questionIndex + 1}</span> / {totalQuestions}
-          </div>
-          <div className="hidden sm:block w-28 h-2 bg-slate-100/70 dark:bg-slate-800/70 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-300"
-              style={{ width: `${((questionIndex + 1) / totalQuestions) * 100}%` }}
-            />
-          </div>
-
-          {gameMode === 'timed' && (
-            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-black uppercase text-amber-600 bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-300">
-              <Zap className="w-3 h-3" />
-              Блиц-марафон
-            </span>
-          )}
-        </div>
-
-        {/* Dynamic status: Lives, Streak, Timer */}
-        <div className="flex items-center gap-3">
-          
-          {/* Survival Hearts */}
-          {gameMode === 'survival' && (
-            <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/60 px-2.5 py-1 rounded-full border border-rose-300 dark:border-rose-800">
-              {[...Array(3)].map((_, i) => (
-                <Heart
-                  key={i}
-                  className={`w-4 h-4 transition-all ${
-                    i < lives
-                      ? 'text-rose-500 fill-rose-500 animate-pulse'
-                      : 'text-slate-300 dark:text-slate-700'
-                  }`}
-                />
-              ))}
+        {/* Progress HUD Zone */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Архивный вопрос <span className="text-amber-500 text-base font-extrabold font-mono">{questionIndex + 1}</span> из {totalQuestions}
             </div>
-          )}
-
-          {/* Streak & Combo multiplier */}
-          {streak > 1 && (
-            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-xs shadow-md animate-bounce">
-              <Flame className="w-4 h-4 fill-white" />
-              <span>x{comboMultiplier} КОМБО!</span>
+            
+            <div className="w-28 sm:w-36 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-slate-700/50">
+              <div
+                className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 rounded-full transition-all duration-500 shadow-sm"
+                style={{ width: `${((questionIndex + 1) / totalQuestions) * 100}%` }}
+              />
             </div>
-          )}
 
-          {/* Timer */}
-          <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/80 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-            <Clock className={`w-4 h-4 ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-amber-500'}`} />
-            <span className={timeLeft <= 5 ? 'text-red-500 font-black' : ''}>{timeLeft} с</span>
+            {gameMode === 'timed' && (
+              <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                Блиц
+              </span>
+            )}
+          </div>
+
+          {/* Dynamic indicators: Hearts, Combo Streak, Timer */}
+          <div className="flex items-center gap-3">
+            {/* Hearts in Survival Mode */}
+            {gameMode === 'survival' && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400">
+                {[...Array(3)].map((_, i) => (
+                  <Heart
+                    key={i}
+                    className={`w-4 h-4 transition-all duration-300 ${
+                      i < lives
+                        ? 'text-rose-500 fill-rose-500 animate-pulse scale-110'
+                        : 'text-slate-300 dark:text-slate-700'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Streak & Multiplier */}
+            {streak > 1 && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-lg shadow-amber-500/25 animate-bounce">
+                <Flame className="w-4 h-4 fill-white" />
+                <span>x{comboMultiplier} КОМБО!</span>
+              </div>
+            )}
+
+            {/* Timer Badge */}
+            <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+              <Clock className={`w-4 h-4 ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-amber-500'}`} />
+              <span className={timeLeft <= 5 ? 'text-red-500 font-extrabold' : ''}>{timeLeft}с</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Question Box */}
-      <div className="bg-white/75 dark:bg-slate-900/75 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/60 dark:border-slate-800 shadow-2xl transition-all relative overflow-hidden">
+      {/* Main Question Glass Card */}
+      <div className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border transition-all duration-300 shadow-2xl relative overflow-hidden ${
+        shieldActiveForCurrent
+          ? 'border-emerald-500/40 ring-1 ring-emerald-500/20'
+          : 'border-white/70 dark:border-slate-800'
+      }`}>
         
-        {/* Category Header */}
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-2.5 py-1 rounded border border-amber-300 dark:border-amber-800 font-serif">
+        {/* Category Header & Metadata - Clean Unboxed Discipline */}
+        <div className="flex items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <span className="text-amber-700 dark:text-amber-300 font-serif font-bold">
               Архивная карточка № {questionIndex + 1}
             </span>
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              • {question.categoryTitle}
-            </span>
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+            <span>{question.categoryTitle}</span>
           </div>
 
-          {/* Voice Narration Button */}
+          {/* Voice Narration Button with Live Audio Waveform Visualizer */}
           <button
             onClick={handleToggleSpeech}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
               isSpeaking
-                ? 'bg-amber-500 text-white border-amber-600 animate-pulse'
-                : 'bg-white/40 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-white/80'
+                ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/30'
+                : 'bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-700 hover:bg-slate-200/80'
             }`}
-            title="Озвучить вопрос голосом экскурсовода"
+            title="Озвучить вопрос голосом гида"
           >
-            {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-amber-500" />}
-            <span className="hidden sm:inline">{isSpeaking ? 'Остановить' : 'Озвучить'}</span>
+            {isSpeaking ? (
+              <>
+                <div className="flex items-center gap-0.5 h-3">
+                  <span className="w-0.5 h-3 bg-white animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-0.5 h-3 bg-white animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-0.5 h-3 bg-white animate-bounce" />
+                </div>
+                <span className="text-[11px]">Стоп</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden sm:inline text-[11px]">Голос гида</span>
+              </>
+            )}
           </button>
         </div>
 
-        {/* Question Text */}
-        <h2 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 dark:text-white mb-6 leading-snug">
+        {/* Question Heading */}
+        <h2 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 dark:text-white mb-6 leading-relaxed tracking-tight">
           {question.text}
         </h2>
 
-        {/* Optional Image */}
+        {/* Optional Question Photograph */}
         {question.imageUrl && (
-          <div className="mb-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-64 shadow-inner">
+          <div className="mb-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-72 shadow-lg relative group">
             <img
               src={question.imageUrl}
               alt="Иллюстрация к вопросу"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
+            {question.imageCaption && (
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 text-white text-xs font-medium">
+                {question.imageCaption}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Lifelines & Hints toolbar */}
+        {/* Lifelines Toolbar */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
-          {/* 50:50 Lifeline */}
           <button
             onClick={handleUse5050}
-            disabled={used5050 || selectedOption !== null}
+            disabled={used5050 || isAnswered}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
               used5050
-                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed'
-                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 hover:bg-amber-100'
+                ? 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-800 cursor-not-allowed'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/50 shadow-sm'
             }`}
           >
-            <HelpCircle className="w-3.5 h-3.5" />
-            Подсказка 50:50 {used5050 ? '(исп.)' : ''}
+            <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
+            50:50 {used5050 ? '(исп.)' : ''}
           </button>
 
-          {/* Defensive Shield (Second chance) */}
           {hasShield && (
             <button
               onClick={handleActivateShield}
-              disabled={shieldActiveForCurrent || selectedOption !== null}
+              disabled={shieldActiveForCurrent || isAnswered}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                 shieldActiveForCurrent
-                  ? 'bg-emerald-500 text-white border-emerald-600 shadow-md animate-pulse'
-                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100'
+                  ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-100 shadow-sm'
               }`}
             >
-              <Shield className="w-3.5 h-3.5" />
+              <Shield className="w-3.5 h-3.5 text-emerald-500" />
               {shieldActiveForCurrent ? 'Щит активен!' : 'Защитный щит'}
             </button>
           )}
 
-          {/* Text Hint */}
           {question.hint && (
             <button
               onClick={() => { soundFx.playClick(); setShowHint(!showHint); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 transition-colors shadow-sm"
             >
-              <Lightbulb className="w-3.5 h-3.5" />
-              {showHint ? 'Скрыть подсказку' : 'Подсказка экскурсовода'}
+              <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+              {showHint ? 'Скрыть наводку' : 'Подсказка музея'}
             </button>
           )}
 
-          {/* AI Museum Guide Hint */}
           <button
             onClick={onRequestAiHint}
-            disabled={isAiLoading || selectedOption !== null}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 hover:bg-indigo-100 transition-colors"
+            disabled={isAiLoading || isAnswered}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700/60 hover:bg-indigo-100 transition-colors shadow-sm"
           >
             <Bot className="w-3.5 h-3.5 text-indigo-500" />
-            {isAiLoading ? 'Музейщик думает...' : 'Спросить ИИ-Музейщика'}
+            {isAiLoading ? 'Краевед думает...' : 'Спросить ИИ-Краеведа'}
           </button>
         </div>
 
-        {/* Text Hint Box */}
+        {/* Human Hint Box */}
         {showHint && question.hint && (
-          <div className="mb-6 p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2.5 shadow-sm">
-            <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <span><strong>Совет экскурсовода:</strong> {question.hint}</span>
+          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-slate-800 dark:text-slate-200 flex items-start gap-3 shadow-inner">
+            <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <strong className="text-amber-800 dark:text-amber-300 font-serif">Подсказка экскурсовода:</strong> {question.hint}
+            </div>
           </div>
         )}
 
-        {/* AI Hint Response Box */}
+        {/* AI Hint Response */}
         {aiHintText && (
-          <div className="mb-6 p-4 rounded-2xl bg-indigo-50/90 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-3">
+          <div className="mb-6 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-xs text-slate-800 dark:text-slate-200 flex items-start gap-3 shadow-inner">
             <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5 animate-spin" />
-            <div>
-              <p className="font-bold mb-1 text-indigo-700 dark:text-indigo-300">Наводка от ИИ-Краеведа:</p>
-              <p className="leading-relaxed">{aiHintText}</p>
+            <div className="leading-relaxed">
+              <strong className="text-indigo-800 dark:text-indigo-300 font-serif">Наводка ИИ-Музейщика:</strong> {aiHintText}
             </div>
           </div>
         )}
 
         {/* Answer Options Grid */}
-        <div className="grid grid-cols-1 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 mb-6">
           {question.options.map((option, index) => {
             const isHidden = hiddenOptions.includes(index);
             const isSelected = selectedOption === index;
             const isCorrect = index === question.correctIndex;
-            const showFeedback = selectedOption !== null;
 
             if (isHidden) {
               return (
                 <div
                   key={index}
-                  className="p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-400 text-sm opacity-40 select-none"
+                  className="p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 text-slate-400 text-xs sm:text-sm opacity-40 select-none text-center font-mono"
                 >
-                  [Вариант исключен подсказкой 50:50]
+                  [ Исключено подсказкой 50:50 ]
                 </div>
               );
             }
 
-            let btnStyle = 'border-slate-200/80 dark:border-slate-700/70 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-800/80 hover:border-amber-400 text-slate-800 dark:text-slate-100 shadow-sm';
+            const cyrillicLetters = ['А', 'Б', 'В', 'Г'];
+            let btnStyle = 'border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 hover:border-amber-400/80 hover:shadow-md text-slate-800 dark:text-slate-100';
+            let animStyle = '';
 
-            if (showFeedback) {
+            if (isAnswered) {
               if (isCorrect) {
-                btnStyle = 'border-green-500 bg-green-50/90 dark:bg-green-950/90 text-green-900 dark:text-green-100 font-bold shadow-md shadow-green-500/10 backdrop-blur-sm';
+                btnStyle = 'border-emerald-500 bg-emerald-500/15 text-emerald-950 dark:text-emerald-100 font-bold ring-2 ring-emerald-500/30 shadow-md shadow-emerald-500/20';
+                animStyle = 'animate-pulse-correct';
               } else if (isSelected) {
-                btnStyle = 'border-red-500 bg-red-50/90 dark:bg-red-950/90 text-red-900 dark:text-red-100 font-bold backdrop-blur-sm';
+                btnStyle = 'border-rose-500 bg-rose-500/15 text-rose-950 dark:text-rose-100 font-bold ring-2 ring-rose-500/30 shadow-md shadow-rose-500/20';
+                animStyle = 'animate-shake-error';
               } else {
-                btnStyle = 'border-slate-200/60 dark:border-slate-800/60 opacity-50 bg-slate-50/40 dark:bg-slate-900/40';
+                btnStyle = 'border-slate-200/40 dark:border-slate-800/40 opacity-40 bg-slate-50/30 dark:bg-slate-900/30';
               }
             }
 
@@ -369,27 +420,75 @@ export const QuizCard: React.FC<QuizCardProps> = ({
               <button
                 key={index}
                 onClick={() => handleSelectOption(index)}
-                disabled={selectedOption !== null}
-                className={`w-full p-4 sm:p-5 rounded-2xl border-2 text-left font-medium text-sm sm:text-base transition-all duration-200 flex items-center justify-between gap-3 ${btnStyle}`}
+                disabled={isAnswered}
+                className={`group w-full p-4 sm:p-5 rounded-2xl border-2 text-left font-medium text-sm sm:text-base transition-all duration-200 flex items-center justify-between gap-4 ${btnStyle} ${animStyle}`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-xl bg-slate-200 dark:bg-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
-                    {String.fromCharCode(65 + index)}
+                <div className="flex items-center gap-3.5">
+                  <span className={`w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center shrink-0 transition-all ${
+                    isAnswered && isCorrect
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : isAnswered && isSelected
+                      ? 'bg-rose-500 text-white shadow-sm'
+                      : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-white'
+                  }`}>
+                    {cyrillicLetters[index] || String.fromCharCode(65 + index)}
                   </span>
-                  <span>{option}</span>
+                  <span className="leading-snug">{option}</span>
                 </div>
 
-                {showFeedback && (
-                  <div>
-                    {isCorrect && <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0 animate-bounce" />}
-                    {isSelected && !isCorrect && <XCircle className="w-6 h-6 text-red-500 shrink-0" />}
-                  </div>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {!isAnswered && (
+                    <span className="hidden sm:inline-block font-mono text-[10px] text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
+                      [{index + 1}]
+                    </span>
+                  )}
+                  {isAnswered && (
+                    <div>
+                      {isCorrect && <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 animate-bounce" />}
+                      {isSelected && !isCorrect && <XCircle className="w-6 h-6 text-rose-500 shrink-0" />}
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
         </div>
+
+        {/* Immediate Post-Answer Historical Context Box */}
+        {isAnswered && (
+          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 animate-fade-in space-y-4">
+            <div className={`p-5 rounded-2xl border ${
+              selectedOption === question.correctIndex
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-100'
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <h4 className="font-bold font-serif text-sm">
+                  Историческая справка экспозиции:
+                </h4>
+              </div>
+              <p className="text-xs sm:text-sm leading-relaxed mb-2 opacity-95">
+                {question.historicalFact || question.explanation}
+              </p>
+              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                {question.explanation}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => onAnswer(selectedOption, timeSpent, shieldActiveForCurrent)}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-xs sm:text-sm shadow-md hover:from-amber-600 hover:to-amber-700 transition-all flex items-center gap-2"
+              >
+                <span>Следующий вопрос</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+

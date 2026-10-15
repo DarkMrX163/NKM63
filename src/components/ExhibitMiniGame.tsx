@@ -52,14 +52,28 @@ export const ExhibitMiniGame: React.FC<ExhibitMiniGameProps> = ({
   const [streak, setStreak] = React.useState(0);
   const [sessionPointsEarned, setSessionPointsEarned] = React.useState(0);
   const [showGalleryView, setShowGalleryView] = React.useState(false);
+  const [shuffledOptions, setShuffledOptions] = React.useState<Array<{ text: string; originalIndex: number }>>([]);
 
-  // Sync zoom when changing exhibit
+  // Sync zoom and shuffle options when changing exhibit
   React.useEffect(() => {
     setCurrentZoom(currentExhibit.zoomCoordinates.initialZoom);
     setShowClue(false);
     setSelectedOption(null);
     setIsAnswered(false);
     setIsCorrect(false);
+
+    // Create options array with original indices and shuffle
+    const optionsWithIndex = currentExhibit.options.map((opt, idx) => ({
+      text: opt,
+      originalIndex: idx
+    }));
+
+    for (let i = optionsWithIndex.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [optionsWithIndex[i], optionsWithIndex[j]] = [optionsWithIndex[j], optionsWithIndex[i]];
+    }
+
+    setShuffledOptions(optionsWithIndex);
   }, [currentIndex]);
 
   const handleZoomChange = (newZoom: number) => {
@@ -87,7 +101,10 @@ export const ExhibitMiniGame: React.FC<ExhibitMiniGameProps> = ({
     setSelectedOption(index);
     setIsAnswered(true);
 
-    if (index === currentExhibit.correctOptionIndex) {
+    const selectedOpt = shuffledOptions[index];
+    const isRight = selectedOpt && selectedOpt.originalIndex === currentExhibit.correctOptionIndex;
+
+    if (isRight) {
       soundFx.playCorrect();
       setIsCorrect(true);
       setCurrentZoom(1.0); // Smoothly zoom out to full exhibit view
@@ -287,17 +304,20 @@ export const ExhibitMiniGame: React.FC<ExhibitMiniGameProps> = ({
 
             {/* Options List */}
             <div className="space-y-2.5">
-              {currentExhibit.options.map((option, idx) => {
+              {shuffledOptions.map((optObj, idx) => {
                 const isSelected = selectedOption === idx;
-                const isCorrectOption = idx === currentExhibit.correctOptionIndex;
+                const isCorrectOption = optObj.originalIndex === currentExhibit.correctOptionIndex;
 
                 let btnStyle = 'bg-white/25 dark:bg-slate-900/40 border-white/20 dark:border-white/10 text-slate-900 dark:text-white hover:bg-white/40 dark:hover:bg-slate-800/60';
+                let animStyle = '';
 
                 if (isAnswered) {
                   if (isCorrectOption) {
                     btnStyle = 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/30 font-black';
+                    animStyle = 'animate-pulse-correct';
                   } else if (isSelected) {
                     btnStyle = 'bg-rose-600 text-white border-rose-500 font-bold';
+                    animStyle = 'animate-shake-error';
                   } else {
                     btnStyle = 'opacity-40 bg-white/10 dark:bg-slate-900/20 border-transparent text-slate-500';
                   }
@@ -308,11 +328,11 @@ export const ExhibitMiniGame: React.FC<ExhibitMiniGameProps> = ({
                     key={idx}
                     onClick={() => handleSelectOption(idx)}
                     disabled={isAnswered}
-                    className={`w-full text-left p-3.5 sm:p-4 rounded-2xl border backdrop-blur-md text-xs sm:text-sm font-semibold transition-all flex items-center justify-between gap-3 ${btnStyle}`}
+                    className={`w-full text-left p-3.5 sm:p-4 rounded-2xl border backdrop-blur-md text-xs sm:text-sm font-semibold transition-all flex items-center justify-between gap-3 ${btnStyle} ${animStyle}`}
                   >
-                    <span>{option}</span>
+                    <span>{optObj.text}</span>
                     {isAnswered && isCorrectOption && <CheckCircle2 className="w-5 h-5 shrink-0 text-white" />}
-                    {isAnswered && isSelected && !isCorrectOption && <XCircle className="w-5 h-5 shrink-0 text-white" />}
+                    {isAnswered && isSelected && !isCorrectOption && <XCircle className="w-5 h-5 shrink-0 text-white text-rose-200" />}
                   </button>
                 );
               })}
