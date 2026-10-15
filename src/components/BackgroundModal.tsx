@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Image, Upload, RotateCcw, Check, Sparkles, Sliders, Link, Eye, Maximize2, StretchHorizontal, Shrink, Layers } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import samaraSteppeBg from '../assets/backgrounds/samara_steppe.jpg';
 
 export type BackgroundFit = 'cover' | 'fill' | 'contain';
 
@@ -16,61 +17,19 @@ export interface BackgroundSettings {
 
 export const PRESET_BACKGROUNDS = [
   {
-    id: 'parchment',
-    name: 'Музейный пергамент (Полное заполнение)',
-    url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=200&q=60',
-    description: 'Старинная фактура музейной бумаги — идеальна для чтения'
-  },
-  {
     id: 'samara_river',
-    name: 'Река Самара и степные дали',
-    url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=200&q=60',
-    description: 'Живописная пойма заволжских степей и речные заводи'
-  },
-  {
-    id: 'barinovka',
-    name: 'Бариновская мельница и поле',
-    url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=200&q=60',
-    description: 'Золотые колосья и ветряная мельница Поволжья'
-  },
-  {
-    id: 'steppes',
-    name: 'Золотая заволжская степь',
-    url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=200&q=60',
-    description: 'Бескрайние степные просторы Самарского края'
-  },
-  {
-    id: 'utevka_church',
-    name: 'Утёвка и храм Троицы',
-    url: 'https://images.unsplash.com/photo-1548625361-195fe57876a3?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1548625361-195fe57876a3?auto=format&fit=crop&w=200&q=60',
-    description: 'Троицкий храм, расписанный Григорием Журавлёвым'
-  },
-  {
-    id: 'neftegorsk_night',
-    name: 'Вечерний Нефтегорск и огни',
-    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80',
-    thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=200&q=60',
-    description: 'Огни города нефтяников под звездным небом'
-  },
-  {
-    id: 'neutral',
-    name: 'Нейтральный (без фото)',
-    url: '',
-    thumbnail: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=200&q=60',
-    description: 'Минималистичный вид без фонового изображения'
+    name: 'Река Самара и заволжские степи',
+    url: samaraSteppeBg || '/images/backgrounds/samara_steppe.jpg',
+    thumbnail: samaraSteppeBg || '/images/backgrounds/samara_steppe.jpg',
+    description: 'Живописные просторы реки Самара, ковыльные степи и пойменные дубравы Самарского края'
   }
 ];
 
 export const DEFAULT_BG_SETTINGS: BackgroundSettings = {
   type: 'preset',
-  url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1920&q=80',
-  name: 'Музейный пергамент',
-  overlayOpacity: 15,
+  url: samaraSteppeBg || '/images/backgrounds/samara_steppe.jpg',
+  name: 'Река Самара и заволжские степи',
+  overlayOpacity: 12,
   blur: 0,
   fit: 'cover',
   glassEffect: true
@@ -187,10 +146,10 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-bold font-serif text-slate-900 dark:text-white">
-                Настройка фона викторины
+                Атмосфера краеведческого музея
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Загрузите своё фото или выберите исторический пейзаж Нефтегорского края
+                Выберите экспозиционный зал музея или исторический пейзаж Нефтегорского края
               </p>
             </div>
           </div>
@@ -217,50 +176,46 @@ export const BackgroundModal: React.FC<BackgroundModalProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {PRESET_BACKGROUNDS.map((preset) => {
-                const isSelected =
-                  (preset.id === 'neutral' && (selectedType === 'default' || !selectedUrl)) ||
-                  (selectedType !== 'default' && selectedUrl === preset.url);
+                const isSelected = selectedType === 'preset' && (selectedUrl === preset.url || selectedName === preset.name);
 
                 return (
                   <button
                     key={preset.id}
                     onClick={() => {
                       soundFx.playClick();
-                      if (preset.id === 'neutral') {
-                        setSelectedType('default');
-                        setSelectedUrl('');
-                        setSelectedName('Нейтральный (без фото)');
-                      } else {
-                        setSelectedType('preset');
-                        setSelectedUrl(preset.url);
-                        setSelectedName(preset.name);
-                        setFit('cover');
-                      }
+                      setSelectedType('preset');
+                      setSelectedUrl(preset.url);
+                      setSelectedName(preset.name);
+                      setFit('cover');
                     }}
-                    className={`relative group rounded-2xl overflow-hidden border-2 text-left p-2 transition-all ${
+                    className={`relative group rounded-2xl overflow-hidden border-2 text-left p-3 transition-all ${
                       isSelected
                         ? 'border-amber-500 shadow-md shadow-amber-500/20 bg-amber-50 dark:bg-amber-950/40'
                         : 'border-slate-200 dark:border-slate-800 hover:border-amber-400/50 bg-slate-50 dark:bg-slate-800/40'
                     }`}
                   >
-                    <div className="relative h-20 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 mb-2">
+                    <div className="relative h-36 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 mb-2.5">
                       <img
                         src={preset.thumbnail}
                         alt={preset.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+                      <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs text-amber-300 text-[11px] font-bold">
+                        Краеведческий фон по умолчанию
+                      </div>
                       {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-md">
+                        <div className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-md text-xs font-bold">
                           <Check className="w-3.5 h-3.5" />
+                          <span>Выбран</span>
                         </div>
                       )}
                     </div>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    <div className="text-sm font-bold text-slate-800 dark:text-slate-100">
                       {preset.name}
                     </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {preset.description}
                     </div>
                   </button>

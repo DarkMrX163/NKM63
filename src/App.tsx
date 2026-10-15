@@ -96,12 +96,20 @@ export default function App() {
       const saved = localStorage.getItem('quiz_bg_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.url || parsed.type === 'default') {
+        // Automatically migrate to "Река Самара и заволжские степи" if unset or pointing to another theme
+        if (
+          !parsed.url || 
+          parsed.type === 'default' || 
+          parsed.name !== 'Река Самара и заволжские степи' ||
+          !parsed.url.includes('samara_steppe')
+        ) {
+          localStorage.setItem('quiz_bg_settings', JSON.stringify(DEFAULT_BG_SETTINGS));
           return DEFAULT_BG_SETTINGS;
         }
         return {
           ...DEFAULT_BG_SETTINGS,
           ...parsed,
+          url: DEFAULT_BG_SETTINGS.url,
           fit: parsed.fit || 'cover',
           glassEffect: parsed.glassEffect ?? true
         };
@@ -109,6 +117,7 @@ export default function App() {
     } catch (e) {
       console.warn('Failed to parse bg_settings', e);
     }
+    localStorage.setItem('quiz_bg_settings', JSON.stringify(DEFAULT_BG_SETTINGS));
     return DEFAULT_BG_SETTINGS;
   });
   const [lastRecord, setLastRecord] = React.useState<LeaderboardRecord | null>(null);
@@ -441,28 +450,40 @@ export default function App() {
       {/* Toast Notification for Unlocked Achievements */}
       <AchievementToast badge={toastBadge} onClose={() => setToastBadge(null)} />
 
-      {/* Custom/Preset Wallpaper Layer */}
-      {bgSettings.type !== 'default' && bgSettings.url && (
+      {/* Museum Thematic Wallpaper Layer */}
+      {bgSettings.url && (
         <>
           <div
-            className="fixed inset-0 pointer-events-none z-0 transition-all duration-500"
+            className="fixed inset-0 pointer-events-none z-0 transition-all duration-700 ease-out"
             style={{
-              backgroundImage: `url(${bgSettings.url})`,
+              backgroundImage: `url(${bgSettings.url}), url('/images/backgrounds/samara_steppe.jpg'), url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1920&q=80')`,
               backgroundSize: bgSettings.fit === 'fill' ? '100% 100%' : bgSettings.fit === 'contain' ? 'contain' : 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
               backgroundAttachment: 'fixed',
               filter: bgSettings.blur > 0 ? `blur(${bgSettings.blur}px)` : undefined,
               transform: bgSettings.blur > 0 ? 'scale(1.05)' : undefined
             }}
           />
+
+          {/* Museum Exhibition Directional Warm Glow (Subtle) */}
+          <div
+            className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.08)_0%,_transparent_70%)]"
+          />
+
+          {/* Museum Contrast Tint (Delicate for high background visibility) */}
           <div
             className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300"
             style={{
               backgroundColor: isDarkMode ? '#020617' : '#0f172a',
-              opacity: (bgSettings.overlayOpacity ?? 25) / 100
+              opacity: (bgSettings.overlayOpacity ?? 12) / 100
             }}
           />
+
+          {/* Museum Watermark Seal at bottom */}
+          <div className="fixed bottom-2.5 right-4 pointer-events-none z-0 text-[10px] uppercase font-mono tracking-widest text-amber-500/30 select-none hidden md:block">
+            МБУ «Нефтегорский межпоселенческий краеведческий музей» • nkm63.ru
+          </div>
         </>
       )}
 

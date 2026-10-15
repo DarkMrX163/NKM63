@@ -13,7 +13,8 @@ import {
   BookOpen, 
   Eye, 
   Scroll,
-  Ticket
+  Ticket,
+  Image
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { AtmosphericAudioWidget } from './AtmosphericAudioWidget';
@@ -94,6 +95,18 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2.5">
             {/* Ambient Soundscapes Widget */}
             <AtmosphericAudioWidget />
+
+            {/* Museum Wallpaper Theme Selector */}
+            {onOpenBackgroundModal && (
+              <button
+                onClick={() => { soundFx.playClick(); onOpenBackgroundModal(); }}
+                title="Фон краеведческого музея"
+                className="p-2 sm:p-2.5 rounded-xl text-slate-700 dark:text-slate-200 bg-white/10 dark:bg-slate-800/20 backdrop-blur-xs hover:bg-white/25 dark:hover:bg-slate-800/40 border border-white/20 dark:border-white/10 transition-colors flex items-center gap-1.5"
+              >
+                <Image className="w-5 h-5 text-amber-500" />
+                <span className="text-xs font-semibold hidden md:inline">Фон музея</span>
+              </button>
+            )}
 
             {/* Mute Sound FX Button */}
             <button
