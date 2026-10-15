@@ -14,13 +14,14 @@ import {
   Eye, 
   Scroll,
   Ticket,
-  Image
+  Image,
+  Search
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { AtmosphericAudioWidget } from './AtmosphericAudioWidget';
 import nkmLogoImg from '../assets/nkm_logo.jpg';
 
-export type AppTab = 'quiz' | 'artifacts' | 'certificate' | 'ticket' | 'blitz' | 'leaderboard' | 'badges' | 'ai';
+export type AppTab = 'quiz' | 'detective' | 'artifacts' | 'certificate' | 'ticket' | 'blitz' | 'leaderboard' | 'badges' | 'ai';
 
 interface HeaderProps {
   activeTab: AppTab;
@@ -158,6 +159,18 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <BookOpen className="w-4 h-4" />
             Викторина
+          </button>
+
+          <button
+            onClick={() => { soundFx.playClick(); setActiveTab('detective'); }}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
+              activeTab === 'detective'
+                ? 'bg-amber-500/90 text-white shadow-md shadow-amber-500/20 backdrop-blur-xs'
+                : 'text-slate-800 dark:text-slate-200 bg-white/5 dark:bg-slate-800/10 hover:bg-white/20 dark:hover:bg-slate-800/30 backdrop-blur-xs border border-white/10 dark:border-white/5'
+            }`}
+          >
+            <Search className="w-4 h-4 text-amber-500" />
+            Музейный детектив
           </button>
 
           <button

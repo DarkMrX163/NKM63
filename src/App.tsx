@@ -15,6 +15,7 @@ import { SocialShareModal } from './components/SocialShareModal';
 import { RegistrationModal } from './components/RegistrationModal';
 import { BackgroundModal, BackgroundSettings, DEFAULT_BG_SETTINGS } from './components/BackgroundModal';
 import { AchievementToast } from './components/AchievementToast';
+import { MuseumDetective } from './components/MuseumDetective';
 import { Footer } from './components/Footer';
 
 import { Difficulty, Question, GameMode, Badge, HallSelection } from './types/quiz';
@@ -692,6 +693,19 @@ export default function App() {
               )
             )}
           </div>
+        )}
+
+        {/* TAB: MUSEUM DETECTIVE / ARCHIVIST */}
+        {activeTab === 'detective' && (
+          <MuseumDetective
+            onAddScore={(pts) => {
+              setScore((s) => s + pts);
+              triggerUnlockBadge('badge_first_step');
+            }}
+            onUnlockBadge={(bId) => {
+              triggerUnlockBadge(bId);
+            }}
+          />
         )}
 
         {/* TAB 2: ARTIFACTS / EXHIBIT MINI-GAME */}

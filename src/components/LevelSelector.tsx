@@ -14,15 +14,17 @@ import {
   CheckCircle2,
   Lock,
   Compass,
-  Landmark
+  Landmark,
+  Search
 } from 'lucide-react';
 import { Difficulty, GameMode, HallSelection } from '../types/quiz';
 import { soundFx } from '../utils/audio';
 import { CompletedHallRecord, MUSEUM_HALLS } from '../data/halls';
+import { AppTab } from './Header';
 
 interface LevelSelectorProps {
   onSelectLevel: (level: HallSelection, mode: GameMode) => void;
-  onNavigateTab?: (tab: 'quiz' | 'artifacts' | 'certificate' | 'blitz' | 'leaderboard' | 'badges' | 'ai' | 'ticket') => void;
+  onNavigateTab?: (tab: AppTab) => void;
   completedHalls?: CompletedHallRecord[];
 }
 
@@ -409,7 +411,14 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
         </div>
 
         {onNavigateTab && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => { soundFx.playClick(); onNavigateTab('detective'); }}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-900 dark:text-amber-200 hover:bg-amber-500/30 border border-amber-500/40 flex items-center gap-1.5 transition-all"
+            >
+              <Search className="w-3.5 h-3.5 text-amber-500" />
+              Архивариус
+            </button>
             <button
               onClick={() => { soundFx.playClick(); onNavigateTab('ticket'); }}
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md flex items-center gap-1.5 transition-all"
