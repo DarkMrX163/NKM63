@@ -1,6 +1,6 @@
 // Web Audio API Sound Effects & Atmospheric Audio Synthesizer
 
-export type AmbientTrack = 'windmill' | 'bells' | 'oil' | 'hall';
+export type AmbientTrack = 'windmill' | 'bells' | 'oil' | 'hall' | 'river';
 
 class SoundEffects {
   private ctx: AudioContext | null = null;
@@ -10,8 +10,9 @@ class SoundEffects {
   private ambientGain: GainNode | null = null;
   private ambientSources: Array<{ stop: () => void }> = [];
   public currentTrack: AmbientTrack | null = null;
-  public ambientVolume: number = 0.35;
+  public ambientVolume: number = 0.4;
   private isAmbientPlaying: boolean = false;
+  private ambientTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     const saved = localStorage.getItem('quiz_muted');
@@ -281,146 +282,460 @@ class SoundEffects {
     this.initCtx();
     if (!this.ctx) return;
 
+    // If muted, automatically unmute so the user immediately hears the chosen ambient track
+    if (this.isMuted) {
+      this.isMuted = false;
+      localStorage.setItem('quiz_muted', 'false');
+    }
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+
     this.currentTrack = track;
     this.isAmbientPlaying = true;
 
     const masterGain = this.ctx.createGain();
-    masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.ambientVolume, this.ctx.currentTime);
+    masterGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+    masterGain.gain.exponentialRampToValueAtTime(this.ambientVolume, this.ctx.currentTime + 0.1);
     masterGain.connect(this.ctx.destination);
     this.ambientGain = masterGain;
 
     if (track === 'windmill') {
-      // Gentle wind breeze generator using filtered noise buffer + LFO
+      // 1. «Мельница в Бариновке» — Степной ветер, шелест ковыля и скрип деревянных крыльев 1848 г.
       const bufferSize = this.ctx.sampleRate * 2;
       const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const output = noiseBuffer.getChannelData(0);
       let lastOut = 0.0;
       for (let i = 0; i < bufferSize; i++) {
         const white = Math.random() * 2 - 1;
-        output[i] = (lastOut + 0.02 * white) / 1.02; // Pink noise
+        output[i] = (lastOut + 0.03 * white) / 1.03;
         lastOut = output[i];
       }
 
-      const whiteNoise = this.ctx.createBufferSource();
-      whiteNoise.buffer = noiseBuffer;
-      whiteNoise.loop = true;
+      // Wind body
+      const windSource = this.ctx.createBufferSource();
+      windSource.buffer = noiseBuffer;
+      windSource.loop = true;
 
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(260, this.ctx.currentTime);
-      filter.Q.setValueAtTime(2.0, this.ctx.currentTime);
+      const windFilter = this.ctx.createBiquadFilter();
+      windFilter.type = 'bandpass';
+      windFilter.frequency.setValueAtTime(280, this.ctx.currentTime);
+      windFilter.Q.setValueAtTime(1.8, this.ctx.currentTime);
 
-      // LFO for gusting wind
-      const lfo = this.ctx.createOscillator();
-      const lfoGain = this.ctx.createGain();
-      lfo.frequency.setValueAtTime(0.2, this.ctx.currentTime); // slow sway
-      lfoGain.gain.setValueAtTime(140, this.ctx.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(filter.frequency);
+      const windLfo = this.ctx.createOscillator();
+      const windLfoGain = this.ctx.createGain();
+      windLfo.frequency.setValueAtTime(0.18, this.ctx.currentTime);
+      windLfoGain.gain.setValueAtTime(160, this.ctx.currentTime);
+      windLfo.connect(windLfoGain);
+      windLfoGain.connect(windFilter.frequency);
 
-      whiteNoise.connect(filter);
-      filter.connect(masterGain);
+      const windGain = this.ctx.createGain();
+      windGain.gain.setValueAtTime(0.7, this.ctx.currentTime);
 
-      whiteNoise.start();
-      lfo.start();
+      windSource.connect(windFilter);
+      windFilter.connect(windGain);
+      windGain.connect(masterGain);
+
+      windSource.start();
+      windLfo.start();
+
+      // Grass rustle layer
+      const grassSource = this.ctx.createBufferSource();
+      grassSource.buffer = noiseBuffer;
+      grassSource.loop = true;
+
+      const grassFilter = this.ctx.createBiquadFilter();
+      grassFilter.type = 'highpass';
+      grassFilter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+
+      const grassGain = this.ctx.createGain();
+      grassGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+
+      grassSource.connect(grassFilter);
+      grassFilter.connect(grassGain);
+      grassGain.connect(masterGain);
+
+      grassSource.start();
+
+      // Periodic windmill sail whoosh and authentic wood creak
+      let millActive = true;
+      const playMillCreak = () => {
+        if (!millActive || !this.ctx || !this.ambientGain) return;
+        const now = this.ctx.currentTime;
+
+        // Sail whoosh
+        const whooshFilter = this.ctx.createBiquadFilter();
+        whooshFilter.type = 'bandpass';
+        whooshFilter.frequency.setValueAtTime(180, now);
+        whooshFilter.frequency.exponentialRampToValueAtTime(450, now + 0.4);
+        whooshFilter.frequency.exponentialRampToValueAtTime(180, now + 0.9);
+        whooshFilter.Q.setValueAtTime(2.5, now);
+
+        const whooshGain = this.ctx.createGain();
+        whooshGain.gain.setValueAtTime(0.001, now);
+        whooshGain.gain.linearRampToValueAtTime(0.35, now + 0.4);
+        whooshGain.gain.linearRampToValueAtTime(0.001, now + 0.9);
+
+        const sailNoise = this.ctx.createBufferSource();
+        sailNoise.buffer = noiseBuffer;
+        sailNoise.connect(whooshFilter);
+        whooshFilter.connect(whooshGain);
+        whooshGain.connect(masterGain);
+        sailNoise.start(now);
+        sailNoise.stop(now + 1.0);
+
+        // Timber creak (soft pitch-bent saw with bandpass)
+        const creakOsc = this.ctx.createOscillator();
+        const creakFilter = this.ctx.createBiquadFilter();
+        const creakGain = this.ctx.createGain();
+
+        creakOsc.type = 'sawtooth';
+        creakOsc.frequency.setValueAtTime(260, now + 0.2);
+        creakOsc.frequency.exponentialRampToValueAtTime(160, now + 0.55);
+
+        creakFilter.type = 'bandpass';
+        creakFilter.frequency.setValueAtTime(420, now + 0.2);
+        creakFilter.Q.setValueAtTime(3.0, now + 0.2);
+
+        creakGain.gain.setValueAtTime(0.001, now + 0.2);
+        creakGain.gain.linearRampToValueAtTime(0.08, now + 0.28);
+        creakGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+        creakOsc.connect(creakFilter);
+        creakFilter.connect(creakGain);
+        creakGain.connect(masterGain);
+
+        creakOsc.start(now + 0.2);
+        creakOsc.stop(now + 0.6);
+      };
+
+      playMillCreak();
+      this.ambientTimer = setInterval(playMillCreak, 3200);
 
       this.ambientSources.push({
         stop: () => {
+          millActive = false;
           try {
-            whiteNoise.stop();
-            lfo.stop();
+            windSource.stop();
+            windLfo.stop();
+            grassSource.stop();
           } catch {}
         }
       });
     } else if (track === 'bells') {
-      // Repeating gentle church bell harmonic chime (Trinity church Utevka)
-      let active = true;
-      const playBellChime = () => {
-        if (!active || !this.ctx) return;
-        const now = this.ctx.currentTime;
-        const freqs = [440, 660, 880, 1320]; // Russian bell harmonic series
-        freqs.forEach((freq, idx) => {
+      // 2. «Благовест Утёвки» — Торжественный колокольный перезвон Троицкого храма
+      let bellsActive = true;
+
+      // Realistic Russian bronze bell synthesizer
+      const strikeBell = (freq: number, volume: number, decay: number, delaySec: number = 0) => {
+        if (!bellsActive || !this.ctx || !this.ambientGain) return;
+        const now = this.ctx.currentTime + delaySec;
+
+        // Authentic Russian bell overtone spectrum
+        const partials = [
+          { mult: 0.5, amp: 0.45, decayMult: 1.2 },   // Hum note (унтертон)
+          { mult: 1.0, amp: 1.0, decayMult: 1.0 },    // Prime/strike (основной тон)
+          { mult: 1.189, amp: 0.7, decayMult: 0.8 },  // Minor third (терция)
+          { mult: 1.5, amp: 0.5, decayMult: 0.75 },   // Quint (квинта)
+          { mult: 2.0, amp: 0.4, decayMult: 0.5 },    // Octave (номинал)
+          { mult: 2.74, amp: 0.25, decayMult: 0.35 }  // Supernominal
+        ];
+
+        partials.forEach((p) => {
           const osc = this.ctx!.createOscillator();
           const gain = this.ctx!.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now);
 
-          const vol = 0.15 / (idx + 1);
-          gain.gain.setValueAtTime(vol, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq * p.mult, now);
+
+          const peak = volume * p.amp * 0.2;
+          const noteDecay = decay * p.decayMult;
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(peak, now + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + noteDecay);
 
           osc.connect(gain);
           gain.connect(masterGain);
 
           osc.start(now);
-          osc.stop(now + 3.5);
+          osc.stop(now + noteDecay);
         });
       };
 
-      playBellChime();
-      const interval = setInterval(playBellChime, 5000);
+      // Bell ringing rhythm: Deep Blagovest + melodic chime cascade
+      let step = 0;
+      const playBellSequence = () => {
+        if (!bellsActive || !this.ctx) return;
+
+        // Big Bass Bell toll (Благовест)
+        strikeBell(220, 0.95, 4.2, 0.0);
+
+        // Perezvon chimes (A-major / F# minor pentatonic Russian sacred bells)
+        if (step % 2 === 0) {
+          strikeBell(880, 0.45, 1.8, 0.8);
+          strikeBell(659.25, 0.5, 2.0, 1.4);
+          strikeBell(554.37, 0.55, 2.2, 2.0);
+          strikeBell(440, 0.65, 2.8, 2.6);
+        } else {
+          strikeBell(554.37, 0.5, 2.2, 0.7);
+          strikeBell(659.25, 0.5, 2.0, 1.3);
+          strikeBell(880, 0.6, 2.2, 1.9);
+          strikeBell(1108.7, 0.4, 1.5, 2.5);
+          strikeBell(659.25, 0.5, 2.2, 3.1);
+        }
+        step++;
+      };
+
+      playBellSequence();
+      this.ambientTimer = setInterval(playBellSequence, 4400);
 
       this.ambientSources.push({
         stop: () => {
-          active = false;
-          clearInterval(interval);
+          bellsActive = false;
         }
       });
     } else if (track === 'oil') {
-      // Rhythmic Volga oil pumpjack stroke (low bass chug and steam release)
-      let active = true;
-      const playPumpStroke = () => {
-        if (!active || !this.ctx) return;
+      // 3. «Нефтяной промысел» — Чёткий ритм станка-качалки СКД и дыхание скважины
+      let oilActive = true;
+
+      const playPumpjackCycle = () => {
+        if (!oilActive || !this.ctx || !this.ambientGain) return;
         const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(80, now);
-        osc.frequency.exponentialRampToValueAtTime(45, now + 0.8);
 
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.005, now + 1.2);
+        // Phase 1 (t=0.0s): Upstroke mechanical hum (audible fundamental + harmonics for phone/laptop speakers)
+        const motor1 = this.ctx.createOscillator();
+        const motor2 = this.ctx.createOscillator();
+        const motorGain = this.ctx.createGain();
 
-        osc.connect(gain);
-        gain.connect(masterGain);
+        motor1.type = 'triangle';
+        motor1.frequency.setValueAtTime(115, now);
+        motor1.frequency.linearRampToValueAtTime(145, now + 0.9);
 
-        osc.start(now);
-        osc.stop(now + 1.2);
+        motor2.type = 'sawtooth';
+        motor2.frequency.setValueAtTime(230, now);
+        motor2.frequency.linearRampToValueAtTime(290, now + 0.9);
+
+        motorGain.gain.setValueAtTime(0.001, now);
+        motorGain.gain.linearRampToValueAtTime(0.22, now + 0.2);
+        motorGain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+
+        motor1.connect(motorGain);
+        motor2.connect(motorGain);
+        motorGain.connect(masterGain);
+
+        motor1.start(now);
+        motor2.start(now);
+        motor1.stop(now + 1.0);
+        motor2.stop(now + 1.0);
+
+        // Phase 2 (t=0.95s): Top crest counterweight gear clack
+        [520, 1040].forEach((freq) => {
+          const clack = this.ctx!.createOscillator();
+          const clackGain = this.ctx!.createGain();
+          clack.type = 'sine';
+          clack.frequency.setValueAtTime(freq, now + 0.95);
+          clackGain.gain.setValueAtTime(0.18, now + 0.95);
+          clackGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+          clack.connect(clackGain);
+          clackGain.connect(masterGain);
+          clack.start(now + 0.95);
+          clack.stop(now + 1.1);
+        });
+
+        // Phase 3 (t=1.2s): Heavy downstroke thud (deep bass with crisp upper thump)
+        const thud = this.ctx.createOscillator();
+        const thudGain = this.ctx.createGain();
+        thud.type = 'triangle';
+        thud.frequency.setValueAtTime(130, now + 1.2);
+        thud.frequency.exponentialRampToValueAtTime(65, now + 1.6);
+        thudGain.gain.setValueAtTime(0.35, now + 1.2);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+        thud.connect(thudGain);
+        thudGain.connect(masterGain);
+        thud.start(now + 1.2);
+        thud.stop(now + 1.8);
+
+        // Phase 4 (t=1.25s): Stuffing box pneumatic pressure hiss ("ts-chhhh")
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.6);
+        const puffBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const puffData = puffBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          puffData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+        }
+
+        const puffSource = this.ctx.createBufferSource();
+        puffSource.buffer = puffBuffer;
+
+        const puffFilter = this.ctx.createBiquadFilter();
+        puffFilter.type = 'bandpass';
+        puffFilter.frequency.setValueAtTime(1400, now + 1.25);
+        puffFilter.frequency.exponentialRampToValueAtTime(700, now + 1.7);
+        puffFilter.Q.setValueAtTime(1.5, now + 1.25);
+
+        const puffGain = this.ctx.createGain();
+        puffGain.gain.setValueAtTime(0.28, now + 1.25);
+        puffGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+        puffSource.connect(puffFilter);
+        puffFilter.connect(puffGain);
+        puffGain.connect(masterGain);
+
+        puffSource.start(now + 1.25);
+        puffSource.stop(now + 1.85);
       };
 
-      playPumpStroke();
-      const interval = setInterval(playPumpStroke, 2800);
+      playPumpjackCycle();
+      this.ambientTimer = setInterval(playPumpjackCycle, 2400);
 
       this.ambientSources.push({
         stop: () => {
-          active = false;
-          clearInterval(interval);
+          oilActive = false;
         }
       });
     } else if (track === 'hall') {
-      // Museum hall contemplative warm acoustic drone
-      const freqs = [130.81, 196.00, 261.63]; // C3 - G3 - C4 warm chord
-      freqs.forEach((f) => {
-        const osc = this.ctx!.createOscillator();
-        const gain = this.ctx!.createGain();
+      // 4. «Залы музея» — Акустика залов и старинная музыкальная шкатулка 19 века
+      let hallActive = true;
+
+      // Warm acoustic room drone
+      const roomDrone = this.ctx.createOscillator();
+      const roomGain = this.ctx.createGain();
+      roomDrone.type = 'sine';
+      roomDrone.frequency.setValueAtTime(196.0, this.ctx.currentTime); // G3
+      roomGain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+      roomDrone.connect(roomGain);
+      roomGain.connect(masterGain);
+      roomDrone.start();
+
+      // Antique celesta / music box chime function
+      const playMusicBoxNote = (freq: number, delaySec: number) => {
+        if (!hallActive || !this.ctx || !this.ambientGain) return;
+        const now = this.ctx.currentTime + delaySec;
+
+        const osc = this.ctx.createOscillator();
+        const harm = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, this.ctx!.currentTime);
-        gain.gain.setValueAtTime(0.08, this.ctx!.currentTime);
+        osc.frequency.setValueAtTime(freq, now);
+
+        harm.type = 'triangle';
+        harm.frequency.setValueAtTime(freq * 3, now); // Metallic chime sheen
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
 
         osc.connect(gain);
+        harm.connect(gain);
         gain.connect(masterGain);
-        osc.start();
 
-        this.ambientSources.push({
-          stop: () => {
-            try { osc.stop(); } catch {}
-          }
-        });
+        osc.start(now);
+        harm.start(now);
+        osc.stop(now + 1.9);
+        harm.stop(now + 1.9);
+      };
+
+      // Serene contemplative 19th-century salon melody
+      const melody = [
+        523.25, // C5
+        659.25, // E5
+        783.99, // G5
+        880.00, // A5
+        783.99, // G5
+        659.25, // E5
+        587.33, // D5
+        523.25  // C5
+      ];
+
+      let noteIdx = 0;
+      const playMelodyNote = () => {
+        if (!hallActive || !this.ctx) return;
+        playMusicBoxNote(melody[noteIdx % melody.length], 0);
+        noteIdx++;
+      };
+
+      playMelodyNote();
+      this.ambientTimer = setInterval(playMelodyNote, 1300);
+
+      this.ambientSources.push({
+        stop: () => {
+          hallActive = false;
+          try { roomDrone.stop(); } catch {}
+        }
+      });
+    } else if (track === 'river') {
+      // 5. «Река Самара и волжские волны» — Плеск воды у песчаного берега и речной бриз
+      let riverActive = true;
+
+      const bufferSize = this.ctx.sampleRate * 2.5;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        data[i] = (lastOut + 0.03 * white) / 1.03;
+        lastOut = data[i];
+      }
+
+      // Rolling water wave function
+      const playWave = () => {
+        if (!riverActive || !this.ctx || !this.ambientGain) return;
+        const now = this.ctx.currentTime;
+
+        const waveSource = this.ctx.createBufferSource();
+        waveSource.buffer = noiseBuffer;
+
+        const waveFilter = this.ctx.createBiquadFilter();
+        waveFilter.type = 'lowpass';
+        waveFilter.frequency.setValueAtTime(250, now);
+        waveFilter.frequency.linearRampToValueAtTime(850, now + 1.5);
+        waveFilter.frequency.linearRampToValueAtTime(200, now + 3.2);
+
+        const waveGain = this.ctx.createGain();
+        waveGain.gain.setValueAtTime(0.001, now);
+        waveGain.gain.linearRampToValueAtTime(0.42, now + 1.4);
+        waveGain.gain.exponentialRampToValueAtTime(0.001, now + 3.4);
+
+        waveSource.connect(waveFilter);
+        waveFilter.connect(waveGain);
+        waveGain.connect(masterGain);
+
+        waveSource.start(now);
+        waveSource.stop(now + 3.5);
+
+        // Water droplet ripple ping
+        const drop = this.ctx.createOscillator();
+        const dropGain = this.ctx.createGain();
+        drop.type = 'sine';
+        drop.frequency.setValueAtTime(1100, now + 1.6);
+        drop.frequency.exponentialRampToValueAtTime(1800, now + 1.7);
+        dropGain.gain.setValueAtTime(0.06, now + 1.6);
+        dropGain.gain.exponentialRampToValueAtTime(0.001, now + 1.85);
+
+        drop.connect(dropGain);
+        dropGain.connect(masterGain);
+        drop.start(now + 1.6);
+        drop.stop(now + 1.9);
+      };
+
+      playWave();
+      this.ambientTimer = setInterval(playWave, 3500);
+
+      this.ambientSources.push({
+        stop: () => {
+          riverActive = false;
+        }
       });
     }
   }
 
   public stopAmbient() {
+    if (this.ambientTimer) {
+      clearInterval(this.ambientTimer);
+      this.ambientTimer = null;
+    }
     this.ambientSources.forEach((src) => {
       try { src.stop(); } catch {}
     });

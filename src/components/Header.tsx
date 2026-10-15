@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { AtmosphericAudioWidget } from './AtmosphericAudioWidget';
+import nkmLogoImg from '../assets/nkm_logo.jpg';
 
 export type AppTab = 'quiz' | 'artifacts' | 'certificate' | 'ticket' | 'blitz' | 'leaderboard' | 'badges' | 'ai';
 
@@ -56,16 +57,33 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Ribbon Logo Banner */}
+          {/* Ribbon Logo Banner with NKM official museum icon */}
           <div 
             onClick={() => { soundFx.playClick(); setActiveTab('quiz'); }}
-            className="flex items-center gap-3 cursor-pointer group"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                soundFx.playClick();
+                setActiveTab('quiz');
+              }
+            }}
+            title="Главная — Нефтегорский краеведческий музей (нажмите для перехода к викторине)"
+            className="flex items-center gap-3 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-2xl select-none"
           >
-            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-amber-900/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 flex items-center justify-center border-2 border-amber-600/40 shadow-md group-hover:scale-105 transition-transform backdrop-blur-xs">
-              <Compass className="w-6 h-6 sm:w-7 sm:h-7 text-amber-700 dark:text-amber-300" />
+            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white p-1 flex items-center justify-center border-2 border-amber-600/50 shadow-md group-hover:scale-105 group-hover:border-amber-400 group-hover:shadow-lg transition-all duration-300 overflow-hidden shrink-0">
+              <img 
+                src={nkmLogoImg} 
+                alt="НКМ Нефтегорский краеведческий музей" 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/images/nkm_logo.jpg';
+                }}
+              />
             </div>
             <div>
-              <div className="museum-ribbon px-3 py-1 rounded-md shadow-md inline-block font-serif font-black tracking-wide text-xs sm:text-sm uppercase">
+              <div className="museum-ribbon px-3 py-1 rounded-md shadow-md inline-block font-serif font-black tracking-wide text-xs sm:text-sm uppercase group-hover:brightness-105 transition-all">
                 НЕФТЕГОРСКИЙ КРАЕВЕДЧЕСКИЙ МУЗЕЙ
               </div>
               <p className="text-[10px] sm:text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-widest mt-0.5 font-serif">
