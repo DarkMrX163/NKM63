@@ -1,11 +1,18 @@
 import React from 'react';
-import { LeaderboardRecord, fetchLeaderboard } from '../firebase';
-import { Trophy, Medal, Search, Filter, RefreshCw, User, Award, CheckCircle2 } from 'lucide-react';
+import { LeaderboardRecord, subscribeLeaderboard, fetchLeaderboard } from '../firebase';
+import { Trophy, Medal, Search, Filter, RefreshCw, User, Award, CheckCircle2, Radio } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface LeaderboardProps {
   currentScoreRecord?: LeaderboardRecord | null;
 }
+
+const levelLabels: Record<string, { label: string; color: string }> = {
+  easy: { label: 'Юный краевед', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
+  medium: { label: 'Знаток края', color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
+  hard: { label: 'Хранитель истории', color: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' },
+  mixed: { label: 'Микс викторина', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+};
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) => {
   const [records, setRecords] = React.useState<LeaderboardRecord[]>([]);
@@ -26,8 +33,16 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
   }, []);
 
   React.useEffect(() => {
-    loadLeaderboardData();
-  }, [loadLeaderboardData]);
+    setLoading(true);
+    const unsubscribe = subscribeLeaderboard((data) => {
+      setRecords(data);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   // Combine with current score if provided and not yet in list
   const displayRecords = React.useMemo(() => {
@@ -52,15 +67,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
     <div className="py-8 px-4 max-w-4xl mx-auto">
       {/* Title */}
       <div className="text-center mb-8 space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase border border-amber-300 dark:border-amber-800">
-          <Trophy className="w-3.5 h-3.5" />
-          Облачная синхронизация Firestore
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase border border-emerald-500/20 shadow-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <Radio className="w-3.5 h-3.5 text-emerald-500" />
+          Онлайн-база данных Firestore (Live)
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 dark:text-white">
-          Таблица Краеведческих Лидеров
+          Общая Таблица Краеведческих Лидеров
         </h2>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-          Соревнуйтесь с другими исследователями истории Нефтегорского района и Самарского края!
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
+          Все результаты участников сохраняются в режиме реального времени в облаке Firebase и доступны всем посетителям сайта без сброса!
         </p>
       </div>
 
@@ -73,7 +92,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по имени..."
+            placeholder="Поиск по имени участника..."
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
           />
         </div>
@@ -87,7 +106,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
               onChange={(e) => setFilterLevel(e.target.value as any)}
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none"
             >
-              <option value="all">Все уровни</option>
+              <option value="all">Все викторины</option>
               <option value="easy">Юный краевед</option>
               <option value="medium">Знаток края</option>
               <option value="hard">Хранитель истории</option>
@@ -100,7 +119,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
               soundFx.playClick();
               loadLeaderboardData();
             }}
-            title="Обновить"
+            title="Обновить вручную"
             className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -113,7 +132,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
         {loading ? (
           <div className="p-12 text-center text-slate-400 space-y-3">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto text-amber-500" />
-            <p className="text-xs">Загрузка рейтинга из облачного хранилища...</p>
+            <p className="text-xs">Загрузка рейтинга из облачного хранилища Firestore...</p>
           </div>
         ) : displayRecords.length === 0 ? (
           <div className="p-12 text-center text-slate-400 space-y-2">
@@ -135,6 +154,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
                 rankBadge = <div className="w-7 h-7 rounded-full bg-amber-900/20 text-amber-700 flex items-center justify-center font-bold text-xs"><Medal className="w-4 h-4" /></div>;
               }
 
+              const lvlInfo = levelLabels[record.level] || { label: record.level, color: 'bg-slate-100 text-slate-700' };
+
               return (
                 <div
                   key={record.id || index}
@@ -154,9 +175,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
                         {record.playerName}
                         {rank <= 3 && <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />}
                       </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Точность: {record.accuracy}% • Уровень: {record.level}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${lvlInfo.color}`}>
+                          {lvlInfo.label}
+                        </span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Точность: {record.accuracy}% ({record.correctAnswers}/{record.totalQuestions})
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -166,7 +192,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
                       <span>{record.score} б.</span>
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      {new Date(record.createdAt).toLocaleDateString('ru-RU')}
+                      {record.createdAt ? new Date(record.createdAt).toLocaleDateString('ru-RU') : 'Недавно'}
                     </div>
                   </div>
                 </div>
@@ -178,3 +204,4 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
     </div>
   );
 };
+

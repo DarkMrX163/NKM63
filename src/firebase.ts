@@ -7,6 +7,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  onSnapshot,
   query,
   orderBy,
   limit
@@ -107,6 +108,33 @@ export async function fetchLeaderboard(limitCount = 50): Promise<LeaderboardReco
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, path);
     return [];
+  }
+}
+
+// Subscribe to real-time leaderboard updates
+export function subscribeLeaderboard(
+  callback: (records: LeaderboardRecord[]) => void,
+  limitCount = 50
+): () => void {
+  const path = 'leaderboard';
+  try {
+    const q = query(collection(db, path), orderBy('score', 'desc'), limit(limitCount));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const records: LeaderboardRecord[] = [];
+        snapshot.forEach((docSnap) => {
+          records.push({ id: docSnap.id, ...(docSnap.data() as Omit<LeaderboardRecord, 'id'>) });
+        });
+        callback(records);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.GET, path);
+      }
+    );
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+    return () => {};
   }
 }
 
