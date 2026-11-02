@@ -87,12 +87,26 @@ export interface LeaderboardRecord {
   playerLocation?: string;
   avatar?: string;
   score: number;
-  level: 'easy' | 'medium' | 'hard' | 'mixed';
+  level: string;
   accuracy: number;
   correctAnswers: number;
   totalQuestions: number;
   createdAt: string;
 }
+
+const ALLOWED_LEVELS = new Set([
+  'easy',
+  'medium',
+  'hard',
+  'mixed',
+  'blitz',
+  'hall_neftegorsk',
+  'hall_barinovka',
+  'hall_utevka',
+  'hall_nature',
+  'hall_samara',
+  'hall_museum'
+]);
 
 // Fetch top leaderboard entries
 export async function fetchLeaderboard(limitCount = 50): Promise<LeaderboardRecord[]> {
@@ -138,12 +152,32 @@ export function subscribeLeaderboard(
   }
 }
 
-// Submit a new record
+// Submit a new record with strict defensive validation matching firestore.rules
 export async function submitScore(record: Omit<LeaderboardRecord, 'id'>): Promise<string | null> {
   const path = 'leaderboard';
   try {
     await ensureAuth();
-    const docRef = await addDoc(collection(db, path), record);
+
+    const sanitizedName = (record.playerName || 'Участник Викторины').trim().slice(0, 50) || 'Участник Викторины';
+    const sanitizedLocation = (record.playerLocation || '').trim().slice(0, 100);
+    const sanitizedLevel = ALLOWED_LEVELS.has(record.level) ? record.level : 'mixed';
+
+    const payload: Record<string, any> = {
+      playerName: sanitizedName,
+      playerLocation: sanitizedLocation,
+      score: Math.min(100000, Math.max(0, Math.round(Number(record.score) || 0))),
+      level: sanitizedLevel,
+      accuracy: Math.min(100, Math.max(0, Math.round(Number(record.accuracy) || 0))),
+      correctAnswers: Math.max(0, Math.round(Number(record.correctAnswers) || 0)),
+      totalQuestions: Math.max(1, Math.round(Number(record.totalQuestions) || 1)),
+      createdAt: (record.createdAt || new Date().toISOString()).slice(0, 50)
+    };
+
+    if (record.avatar) {
+      payload.avatar = String(record.avatar).slice(0, 50);
+    }
+
+    const docRef = await addDoc(collection(db, path), payload);
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);

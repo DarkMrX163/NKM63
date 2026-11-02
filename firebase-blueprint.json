@@ -11,6 +11,11 @@
           "maxLength": 50,
           "description": "Name or nickname of the player"
         },
+        "playerLocation": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "City, village, or school of the player"
+        },
         "avatar": {
           "type": "string",
           "maxLength": 50,
@@ -22,8 +27,20 @@
         },
         "level": {
           "type": "string",
-          "enum": ["easy", "medium", "hard", "mixed"],
-          "description": "Difficulty level played"
+          "enum": [
+            "easy",
+            "medium",
+            "hard",
+            "mixed",
+            "blitz",
+            "hall_neftegorsk",
+            "hall_barinovka",
+            "hall_utevka",
+            "hall_nature",
+            "hall_samara",
+            "hall_museum"
+          ],
+          "description": "Difficulty level or thematic hall played"
         },
         "accuracy": {
           "type": "integer",

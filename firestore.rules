@@ -13,11 +13,12 @@ service cloud.firestore {
     
     function isValidLeaderboardEntry(data) {
       return data.keys().hasAll(['playerName', 'score', 'level', 'accuracy', 'correctAnswers', 'totalQuestions', 'createdAt'])
-        && data.keys().hasOnly(['playerName', 'avatar', 'score', 'level', 'accuracy', 'correctAnswers', 'totalQuestions', 'createdAt'])
+        && data.keys().hasOnly(['playerName', 'playerLocation', 'avatar', 'score', 'level', 'accuracy', 'correctAnswers', 'totalQuestions', 'createdAt'])
         && data.playerName is string && data.playerName.size() >= 1 && data.playerName.size() <= 50
-        && (data.avatar == null || (data.avatar is string && data.avatar.size() <= 50))
+        && (!('playerLocation' in data) || data.playerLocation == null || (data.playerLocation is string && data.playerLocation.size() <= 100))
+        && (!('avatar' in data) || data.avatar == null || (data.avatar is string && data.avatar.size() <= 50))
         && data.score is int && data.score >= 0 && data.score <= 100000
-        && data.level in ['easy', 'medium', 'hard', 'mixed']
+        && data.level in ['easy', 'medium', 'hard', 'mixed', 'blitz', 'hall_neftegorsk', 'hall_barinovka', 'hall_utevka', 'hall_nature', 'hall_samara', 'hall_museum']
         && data.accuracy is int && data.accuracy >= 0 && data.accuracy <= 100
         && data.correctAnswers is int && data.correctAnswers >= 0
         && data.totalQuestions is int && data.totalQuestions >= 1

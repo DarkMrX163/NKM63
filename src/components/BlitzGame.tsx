@@ -5,7 +5,7 @@ import { Zap, CheckCircle2, XCircle, Clock, Trophy, RotateCcw } from 'lucide-rea
 import { soundFx } from '../utils/audio';
 
 interface BlitzGameProps {
-  onFinishBlitz: (score: number) => void;
+  onFinishBlitz: (score: number, correctCount: number, totalQuestions: number) => void;
 }
 
 export const BlitzGame: React.FC<BlitzGameProps> = ({ onFinishBlitz }) => {
@@ -101,7 +101,7 @@ export const BlitzGame: React.FC<BlitzGameProps> = ({ onFinishBlitz }) => {
               Снова
             </button>
             <button
-              onClick={() => onFinishBlitz(score)}
+              onClick={() => onFinishBlitz(score, correctCount, BLITZ_STATEMENTS.length)}
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 transition-all"
             >
               Сохранить результат

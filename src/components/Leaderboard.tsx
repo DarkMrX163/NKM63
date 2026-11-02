@@ -1,6 +1,6 @@
 import React from 'react';
 import { LeaderboardRecord, subscribeLeaderboard, fetchLeaderboard } from '../firebase';
-import { Trophy, Medal, Search, Filter, RefreshCw, User, Award, CheckCircle2, Radio } from 'lucide-react';
+import { Trophy, Medal, Search, Filter, RefreshCw, User, Award, CheckCircle2, Radio, MapPin } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface LeaderboardProps {
@@ -12,12 +12,19 @@ const levelLabels: Record<string, { label: string; color: string }> = {
   medium: { label: 'Знаток края', color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' },
   hard: { label: 'Хранитель истории', color: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' },
   mixed: { label: 'Микс викторина', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  blitz: { label: 'Блиц-марафон', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300' },
+  hall_neftegorsk: { label: 'Зал «Нефтегорск и Чёрное золото»', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
+  hall_barinovka: { label: 'Зал «Бариновская мельница»', color: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300' },
+  hall_utevka: { label: 'Зал «Утёвская икона»', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' },
+  hall_nature: { label: 'Зал «Природа и реки»', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' },
+  hall_samara: { label: 'Зал «Летопись Самарской губернии»', color: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' },
+  hall_museum: { label: 'Зал «Сокровищница музея nkm63.ru»', color: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' }
 };
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) => {
   const [records, setRecords] = React.useState<LeaderboardRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [filterLevel, setFilterLevel] = React.useState<'all' | 'easy' | 'medium' | 'hard' | 'mixed'>('all');
+  const [filterLevel, setFilterLevel] = React.useState<string>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
 
   const loadLeaderboardData = React.useCallback(async () => {
@@ -57,7 +64,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((r) => r.playerName.toLowerCase().includes(q));
+      list = list.filter(
+        (r) =>
+          r.playerName.toLowerCase().includes(q) ||
+          (r.playerLocation && r.playerLocation.toLowerCase().includes(q))
+      );
     }
 
     return list.sort((a, b) => b.score - a.score);
@@ -92,7 +103,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по имени участника..."
+            placeholder="Поиск по имени или городу..."
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500"
           />
         </div>
@@ -103,14 +114,21 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value as any)}
+              onChange={(e) => setFilterLevel(e.target.value)}
               className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none"
             >
-              <option value="all">Все викторины</option>
+              <option value="all">Все залы и уровни</option>
               <option value="easy">Юный краевед</option>
               <option value="medium">Знаток края</option>
               <option value="hard">Хранитель истории</option>
-              <option value="mixed">Микс</option>
+              <option value="mixed">Микс викторина</option>
+              <option value="blitz">Блиц-марафон</option>
+              <option value="hall_neftegorsk">Зал «Нефтегорск и Чёрное золото»</option>
+              <option value="hall_barinovka">Зал «Бариновская мельница»</option>
+              <option value="hall_utevka">Зал «Утёвская икона»</option>
+              <option value="hall_nature">Зал «Природа и реки»</option>
+              <option value="hall_samara">Зал «Летопись Самарской губернии»</option>
+              <option value="hall_museum">Зал «Сокровищница музея nkm63.ru»</option>
             </select>
           </div>
 
@@ -154,7 +172,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
                 rankBadge = <div className="w-7 h-7 rounded-full bg-amber-900/20 text-amber-700 flex items-center justify-center font-bold text-xs"><Medal className="w-4 h-4" /></div>;
               }
 
-              const lvlInfo = levelLabels[record.level] || { label: record.level, color: 'bg-slate-100 text-slate-700' };
+              const lvlInfo = levelLabels[record.level] || { label: record.level, color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' };
 
               return (
                 <div
@@ -171,11 +189,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentScoreRecord }) 
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        {record.playerName}
-                        {rank <= 3 && <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          {record.playerName}
+                          {rank <= 3 && <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />}
+                        </h4>
+                        {record.playerLocation && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md">
+                            <MapPin className="w-2.5 h-2.5 text-amber-500" />
+                            {record.playerLocation}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${lvlInfo.color}`}>
                           {lvlInfo.label}
                         </span>

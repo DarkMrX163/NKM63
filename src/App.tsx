@@ -770,9 +770,24 @@ export default function App() {
         {/* TAB 5: BLITZ */}
         {activeTab === 'blitz' && (
           <BlitzGame
-            onFinishBlitz={(blitzScore) => {
+            onFinishBlitz={async (blitzScore, blitzCorrect, blitzTotal) => {
               setScore((s) => s + blitzScore);
               triggerUnlockBadge('badge_blitz_lightning');
+              const accuracy = blitzTotal > 0 ? Math.round((blitzCorrect / blitzTotal) * 100) : 0;
+              const record: Omit<LeaderboardRecord, 'id'> = {
+                playerName: playerName || 'Участник Викторины',
+                playerLocation: playerLocation || '',
+                score: blitzScore,
+                level: 'blitz',
+                accuracy,
+                correctAnswers: blitzCorrect,
+                totalQuestions: blitzTotal,
+                createdAt: new Date().toISOString()
+              };
+              const docId = await submitScore(record);
+              if (docId) {
+                setLastRecord({ id: docId, ...record });
+              }
               setActiveTab('leaderboard');
             }}
           />
